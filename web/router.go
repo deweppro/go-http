@@ -8,108 +8,111 @@ package web
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/deweppro/go-logger"
 )
 
 type (
-	CallFunc func(*Context) error
-	Handler  struct {
-		Method     string
+	//Caller ...
+	Caller func(*Context) error
+	//MiddlewareCaller ...
+	MiddlewareCaller func(*Context) (int, error)
+	//Handler ...
+	Handler struct {
+		Method     []string
 		Path       string
-		Call       CallFunc
-		Middleware CallFunc
-		Formatter  FormatterFunc
+		Call       Caller
+		Middleware MiddlewareCaller
 	}
-	ModuleInjecter interface {
-		Handlers() []Handler
+	//RouteItem ...
+	RouteItem struct {
+		Call       Caller
+		Middleware MiddlewareCaller
 	}
+	//Route ...
 	Route struct {
-		Call       CallFunc
-		Middleware CallFunc
-		Formatter  FormatterFunc
-	}
-	Router struct {
-		routes map[string]*Route
+		routes map[string]*RouteItem
 		log    logger.Logger
 		sync.RWMutex
 	}
+	//RouteInjector ...
+	RouteInjector interface {
+		Handlers() []Handler
+	}
+	//Router ...
+	Router interface {
+		AddRoutes(handlers ...Handler)
+		InjectRoutes(mod RouteInjector)
+	}
 )
 
-func newRouter(log logger.Logger) *Router {
-	return &Router{
-		routes: make(map[string]*Route),
+func newRouter(log logger.Logger) *Route {
+	return &Route{
+		routes: make(map[string]*RouteItem),
 		log:    log,
 	}
 }
 
-func (_rtr *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	msg := &Context{Reader: r, Writer: w, Formatter: TextFormatter}
+//ServeHTTP ...
+func (o *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	msg := &Context{Reader: r, Writer: w}
+	route := o.getRoute(r.Method, r.URL.Path)
 
-	_rtr.RLock()
-	ch := func() *Route {
-		if call, ok := _rtr.routes[strings.Join([]string{r.Method, r.URL.Path}, ":")]; ok {
-			return call
-		} else if call, ok := _rtr.routes[strings.Join([]string{"*", r.URL.Path}, ":")]; ok {
-			return call
-		} else if call, ok := _rtr.routes["*:"]; ok {
-			return call
+	if route == nil {
+		if err := msg.Write(http.StatusNotFound, nil, nil); err != nil {
+			o.log.Errorf("route not found: %s", err.Error())
 		}
-		return nil
-	}()
-	_rtr.RUnlock()
-
-	if ch == nil {
-		_ = msg.Empty(http.StatusNotFound)
 		return
 	}
 
-	if ch.Formatter != nil {
-		msg.Formatter = ch.Formatter
-	}
-
-	if ch.Middleware != nil {
-		if err := ch.Middleware(msg); err != nil {
-			_ = msg.Error(http.StatusBadRequest, err)
+	if route.Middleware != nil {
+		if code, err := route.Middleware(msg); err != nil {
+			if er := msg.Write(code, []byte(err.Error()), nil); er != nil {
+				o.log.Errorf("middleware: %s", er.Error())
+			}
 			return
 		}
 	}
 
-	if err := ch.Call(msg); err != nil {
-		_ = msg.Error(http.StatusBadRequest, err)
+	if err := route.Call(msg); err != nil {
+		if er := msg.Write(http.StatusInternalServerError, []byte(err.Error()), nil); er != nil {
+			o.log.Errorf("call: %s", er.Error())
+		}
 	}
 }
 
-func (_rtr *Router) getRoute(method, path string) *Route {
-	_rtr.RLock()
-	defer _rtr.RUnlock()
+func (o *Route) getRoute(method, path string) *RouteItem {
+	o.RLock()
+	defer o.RUnlock()
 
-	if call, ok := _rtr.routes[method+":"+path]; ok {
+	if call, ok := o.routes[method+":"+path]; ok {
 		return call
-	} else if call, ok := _rtr.routes["*:"+path]; ok {
-		return call
-	} else if call, ok := _rtr.routes["*:"]; ok {
+	}
+	if call, ok := o.routes[method+":*"]; ok {
 		return call
 	}
 	return nil
 }
 
-func (_rtr *Router) AddRoutes(handlers ...Handler) {
-	_rtr.Lock()
-	defer _rtr.Unlock()
+//AddRoutes ...
+func (o *Route) AddRoutes(handlers ...Handler) {
+	o.Lock()
+	defer o.Unlock()
 
 	for _, handler := range handlers {
-		_rtr.log.Infof("add route %s:%s", handler.Method, handler.Path)
-		_rtr.routes[handler.Method+":"+handler.Path] = &Route{
-			Call:       handler.Call,
-			Middleware: handler.Middleware,
-			Formatter:  handler.Formatter,
+		for _, method := range handler.Method {
+			o.log.Infof("add route %s:%s", handler.Method, handler.Path)
+			o.routes[method+":"+handler.Path] = &RouteItem{
+				Call:       handler.Call,
+				Middleware: handler.Middleware,
+			}
 		}
+
 	}
 }
 
-func (_rtr *Router) InjectRoutes(mod ModuleInjecter) {
-	_rtr.AddRoutes(mod.Handlers()...)
+//InjectRoutes ...
+func (o *Route) InjectRoutes(mod RouteInjector) {
+	o.AddRoutes(mod.Handlers()...)
 }

@@ -19,6 +19,7 @@ var (
 	ErrEpollEmptyEvents   = errors.New("epoll events is empty")
 )
 
+//RandomPort ...
 func RandomPort(host string) (string, error) {
 	host = strings.Join([]string{host, "0"}, ":")
 	addr, err := net.ResolveTCPAddr("tcp", host)
@@ -32,6 +33,7 @@ func RandomPort(host string) (string, error) {
 	return l.Addr().String(), l.Close()
 }
 
+//GetFD ...
 func GetFD(c net.Conn) int {
 	fd := reflect.Indirect(reflect.ValueOf(c)).FieldByName("fd")
 	pfd := reflect.Indirect(fd).FieldByName("pfd")

@@ -15,51 +15,58 @@ import (
 )
 
 type (
+	//Headers ...
 	Headers map[string]string
+	//Context ...
 	Context struct {
-		Writer    http.ResponseWriter
-		Reader    *http.Request
-		Formatter FormatterFunc
+		Writer http.ResponseWriter
+		Reader *http.Request
 	}
+	//Decoder ...
+	Decoder func(data []byte, v interface{}) error
+	//Encoder ...
+	Encoder func(v interface{}) ([]byte, error)
 )
 
-func (_ctx *Context) Empty(code int) error {
-	return errors.Wrap(_ctx.Formatter(_ctx, code, nil, nil), "context empty")
-}
-
-func (_ctx *Context) Error(code int, err error) error {
-	return errors.Wrap(_ctx.Formatter(_ctx, code, nil, err), "context error")
-}
-
-func (_ctx *Context) Decode(call func(http.Header, []byte) error) error {
-	data, err := ioutil.ReadAll(_ctx.Reader.Body)
+//Decode ...
+func (c *Context) Decode(model interface{}, call Decoder) error {
+	data, err := ioutil.ReadAll(c.Reader.Body)
 	if err != nil {
 		return errors.Wrap(err, "context decode body read")
 	}
-	if err = _ctx.Reader.Body.Close(); err != nil {
+	if err = c.Reader.Body.Close(); err != nil {
 		return errors.Wrap(err, "context decode body close")
 	}
-	return errors.Wrap(call(_ctx.Reader.Header, data), "context decode call")
+	return errors.Wrap(call(data, model), "context decode call")
 }
 
-func (_ctx *Context) Encode(call func() (int, Headers, interface{})) error {
-	code, headers, body := call()
-	return errors.Wrap(_ctx.Formatter(_ctx, code, headers, body), "context encode formatter")
+//Write ...
+func (c *Context) Write(code int, body []byte, heads Headers) error {
+	if heads != nil {
+		for k, v := range heads {
+			c.Writer.Header().Set(k, v)
+		}
+	}
+	c.Writer.WriteHeader(code)
+	_, err := c.Writer.Write(body)
+	return errors.Wrap(err, "context write")
 }
 
-func (_ctx *Context) Redirect(url string) error {
-	_ctx.Writer.Header().Set("Location", url)
-	_ctx.Writer.WriteHeader(http.StatusMovedPermanently)
-	_, err := _ctx.Writer.Write([]byte{})
+//Redirect ...
+func (c *Context) Redirect(url string) error {
+	c.Writer.Header().Set("Location", url)
+	c.Writer.WriteHeader(http.StatusMovedPermanently)
+	_, err := c.Writer.Write([]byte{})
 	return errors.Wrap(err, "context redirect")
 }
 
-func (_ctx *Context) SetCookie(key, value string, ttl time.Duration) {
-	http.SetCookie(_ctx.Writer, &http.Cookie{
+//SetCookie ...
+func (c *Context) SetCookie(key, value string, ttl time.Duration) {
+	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     key,
 		Value:    value,
 		Path:     "/",
-		Domain:   _ctx.Reader.Host,
+		Domain:   c.Reader.Host,
 		Expires:  time.Now().Add(ttl),
 		Secure:   false,
 		HttpOnly: true,
@@ -67,9 +74,10 @@ func (_ctx *Context) SetCookie(key, value string, ttl time.Duration) {
 	})
 }
 
-func (_ctx *Context) GetCookies() map[string]*http.Cookie {
+//GetCookies ...
+func (c *Context) GetCookies() map[string]*http.Cookie {
 	result := make(map[string]*http.Cookie)
-	for _, c := range _ctx.Reader.Cookies() {
+	for _, c := range c.Reader.Cookies() {
 		result[c.Name] = c
 	}
 	return result

@@ -23,6 +23,7 @@ type (
 	NetConns       []*netConnItem
 	unixEventSlice []unix.EpollEvent
 
+	//Epoll ...
 	Epoll struct {
 		epfd   int
 		conn   netConnMap
@@ -39,6 +40,7 @@ const (
 	cEventIntervalms = 500
 )
 
+//NewEpoll ...
 func NewEpoll(log logger.Logger) (*Epoll, error) {
 	fd, err := unix.EpollCreate1(0)
 	if err != nil {
@@ -53,63 +55,67 @@ func NewEpoll(log logger.Logger) (*Epoll, error) {
 	}, nil
 }
 
-func (_epoll *Epoll) AddOrClose(c net.Conn) error {
+//AddOrClose ...
+func (e *Epoll) AddOrClose(c net.Conn) error {
 	fd := serv.GetFD(c)
-	err := unix.EpollCtl(_epoll.epfd, syscall.EPOLL_CTL_ADD, fd, &unix.EpollEvent{Events: cEpollEvents, Fd: int32(fd)})
+	err := unix.EpollCtl(e.epfd, syscall.EPOLL_CTL_ADD, fd, &unix.EpollEvent{Events: cEpollEvents, Fd: int32(fd)})
 	if err != nil {
 		if er := c.Close(); er != nil {
 			err = errors.Wrap(err, er.Error())
 		}
 		return err
 	}
-	_epoll.Lock()
-	_epoll.conn[fd] = &netConnItem{Conn: c, Fd: fd}
-	_epoll.Unlock()
-	_epoll.log.Infof("epoll open connect: %s", c.RemoteAddr().String())
+	e.Lock()
+	e.conn[fd] = &netConnItem{Conn: c, Fd: fd}
+	e.Unlock()
+	e.log.Infof("epoll open connect: %s", c.RemoteAddr().String())
 	return nil
 }
 
-func (_epoll *Epoll) removeFD(fd int) error {
-	return unix.EpollCtl(_epoll.epfd, syscall.EPOLL_CTL_DEL, fd, nil)
+func (e *Epoll) removeFD(fd int) error {
+	return unix.EpollCtl(e.epfd, syscall.EPOLL_CTL_DEL, fd, nil)
 }
 
-func (_epoll *Epoll) Close(c *netConnItem) error {
-	_epoll.Lock()
-	defer _epoll.Unlock()
-	return _epoll.closeConn(c)
+//Close ...
+func (e *Epoll) Close(c *netConnItem) error {
+	e.Lock()
+	defer e.Unlock()
+	return e.closeConn(c)
 }
 
-func (_epoll *Epoll) closeConn(c *netConnItem) error {
-	if err := _epoll.removeFD(c.Fd); err != nil {
+func (e *Epoll) closeConn(c *netConnItem) error {
+	if err := e.removeFD(c.Fd); err != nil {
 		return err
 	}
-	delete(_epoll.conn, c.Fd)
-	_epoll.log.Infof("epoll close connect: %s", c.Conn.RemoteAddr().String())
+	delete(e.conn, c.Fd)
+	e.log.Infof("epoll close connect: %s", c.Conn.RemoteAddr().String())
 	return c.Conn.Close()
 }
 
-func (_epoll *Epoll) CloseAll() (er error) {
-	_epoll.Lock()
-	defer _epoll.Unlock()
+//CloseAll ...
+func (e *Epoll) CloseAll() (er error) {
+	e.Lock()
+	defer e.Unlock()
 
-	for _, conn := range _epoll.conn {
-		if err := _epoll.closeConn(conn); err != nil {
+	for _, conn := range e.conn {
+		if err := e.closeConn(conn); err != nil {
 			er = errors.Wrap(er, err.Error())
 		}
 	}
-	_epoll.conn = make(netConnMap)
+	e.conn = make(netConnMap)
 	return
 }
 
-func (_epoll *Epoll) getConn(fd int) (*netConnItem, bool) {
-	_epoll.RLock()
-	conn, ok := _epoll.conn[fd]
-	_epoll.RUnlock()
+func (e *Epoll) getConn(fd int) (*netConnItem, bool) {
+	e.RLock()
+	conn, ok := e.conn[fd]
+	e.RUnlock()
 	return conn, ok
 }
 
-func (_epoll *Epoll) Wait() (NetConns, error) {
-	n, err := unix.EpollWait(_epoll.epfd, _epoll.events, cEventIntervalms)
+//Wait ...
+func (e *Epoll) Wait() (NetConns, error) {
+	n, err := unix.EpollWait(e.epfd, e.events, cEventIntervalms)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +123,12 @@ func (_epoll *Epoll) Wait() (NetConns, error) {
 		return nil, serv.ErrEpollEmptyEvents
 	}
 
-	_epoll.elist = _epoll.elist[:0]
+	e.elist = e.elist[:0]
 	for i := 0; i < n; i++ {
-		fd := int(_epoll.events[i].Fd)
-		conn, ok := _epoll.getConn(fd)
+		fd := int(e.events[i].Fd)
+		conn, ok := e.getConn(fd)
 		if !ok {
-			_ = _epoll.removeFD(fd)
+			_ = e.removeFD(fd)
 			continue
 		}
 		if conn.IsAwait() {
@@ -130,15 +136,15 @@ func (_epoll *Epoll) Wait() (NetConns, error) {
 		}
 		conn.Await(true)
 
-		switch _epoll.events[i].Events {
+		switch e.events[i].Events {
 		case unix.POLLIN:
-			_epoll.elist = append(_epoll.elist, conn)
+			e.elist = append(e.elist, conn)
 		default:
-			if err := _epoll.Close(conn); err != nil {
-				_epoll.log.Errorf("epoll close connect: %s", err.Error())
+			if err := e.Close(conn); err != nil {
+				e.log.Errorf("epoll close connect: %s", err.Error())
 			}
 		}
 	}
 
-	return _epoll.elist, nil
+	return e.elist, nil
 }
