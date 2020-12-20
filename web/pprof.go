@@ -14,49 +14,57 @@ import (
 )
 
 type (
+	//Debug ...
 	Debug struct {
 		srv *Server
 	}
 )
 
+var _ RouteInjector = (*Debug)(nil)
+
+//NewDebug ...
 func NewDebug(conf *DebugConfig, log logger.Logger) *Debug {
 	return NewCustomDebug(conf.Debug, log)
 }
 
+//NewCustomDebug ...
 func NewCustomDebug(conf ConfigItem, log logger.Logger) *Debug {
 	debug := &Debug{srv: NewCustomServer(conf, log)}
 	debug.srv.Router().InjectRoutes(debug)
 	return debug
 }
 
-func (_debug *Debug) Handlers() []Handler {
+//Handlers ...
+func (d *Debug) Handlers() []Handler {
 	return []Handler{
-		{Method: http.MethodGet, Path: "/debug/pprof", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/goroutine", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/allocs", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/block", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/heap", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/heap", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/mutex", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/threadcreate", Call: _debug.call(pprof.Index)},
-		{Method: http.MethodGet, Path: "/debug/pprof/cmdline", Call: _debug.call(pprof.Cmdline)},
-		{Method: http.MethodGet, Path: "/debug/pprof/profile", Call: _debug.call(pprof.Profile)},
-		{Method: http.MethodGet, Path: "/debug/pprof/symbol", Call: _debug.call(pprof.Symbol)},
-		{Method: http.MethodGet, Path: "/debug/pprof/trace", Call: _debug.call(pprof.Trace)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/goroutine", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/allocs", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/block", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/heap", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/heap", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/mutex", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/threadcreate", Call: d.call(pprof.Index)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/cmdline", Call: d.call(pprof.Cmdline)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/profile", Call: d.call(pprof.Profile)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/symbol", Call: d.call(pprof.Symbol)},
+		{Method: []string{http.MethodGet}, Path: "/debug/pprof/trace", Call: d.call(pprof.Trace)},
 	}
 }
 
-func (_debug *Debug) call(cb func(http.ResponseWriter, *http.Request)) CallFunc {
+func (d *Debug) call(cb func(http.ResponseWriter, *http.Request)) Caller {
 	return func(message *Context) error {
 		cb(message.Writer, message.Reader)
 		return nil
 	}
 }
 
-func (_debug *Debug) Up() error {
-	return _debug.srv.Up()
+//Up ...
+func (d *Debug) Up() error {
+	return d.srv.Up()
 }
 
-func (_debug *Debug) Down() error {
-	return _debug.srv.Down()
+//Down ...
+func (d *Debug) Down() error {
+	return d.srv.Down()
 }

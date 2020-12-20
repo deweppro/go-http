@@ -28,10 +28,8 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: http.MethodGet, Path: "/", Formatter: web.JSONFormatter, Call: func(ctx *web.Context) error {
-			return ctx.Encode(func() (int, web.Headers, interface{}) {
-				return 200, web.Headers{"x-trace-id": "999-999-999"}, web.ResponseModel{Data: 911}
-			})
+		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
+			return ctx.Write(200, []byte("hello"), web.Headers{"x-trace-id": "999-999-999"})
 		}},
 	)
 
@@ -41,7 +39,6 @@ func main() {
 		panic(err)
 	}
 }
-
 ```
 
 ## Debug server (pprof)
@@ -101,7 +98,6 @@ func main() {
 		panic(err)
 	}
 }
-
 ```
 
 ## Web server + websocket
@@ -121,7 +117,7 @@ import (
 
 func main() {
 
-	wsock := ws.New(10, 128, logger.Default())
+	wsock := ws.NewServer(10, 128, logger.Default())
 
 	srv := web.NewCustomServer(web.ConfigItem{Addr: "localhost:8080"}, logger.Default())
 	if err := srv.Up(); err != nil {
@@ -129,7 +125,7 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: http.MethodGet, Path: "/", Formatter: web.EmptyFormatter, Call: func(ctx *web.Context) error {
+		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
 			return wsock.Handler(ctx.Writer, ctx.Reader,
 				func(out chan<- *ws.Message, in <-chan *ws.Message, ctx context.Context, cncl context.CancelFunc) {
 					i := 0
@@ -155,5 +151,4 @@ func main() {
 		panic(err)
 	}
 }
-
 ```

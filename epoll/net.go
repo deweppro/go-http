@@ -18,12 +18,14 @@ type netConnItem struct {
 	sync.RWMutex
 }
 
+//Await ...
 func (n *netConnItem) Await(b bool) {
 	n.Lock()
 	n.await = b
 	n.Unlock()
 }
 
+//IsAwait ...
 func (n *netConnItem) IsAwait() bool {
 	n.Lock()
 	defer n.Unlock()

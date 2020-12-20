@@ -10,12 +10,11 @@ package epoll
 
 //easyjson:json
 type (
-	/*
-		http server config
-	*/
+	//EpollConfig ...
 	EpollConfig struct {
 		Epoll ConfigItem `yaml:"epoll" json:"epoll"`
 	}
+	//ConfigItem ...
 	ConfigItem struct {
 		Addr string `yaml:"addr" json:"addr"`
 	}

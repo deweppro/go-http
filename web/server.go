@@ -21,18 +21,23 @@ const (
 	defaultTimeOut = 10 * time.Second
 )
 
-type Server struct {
-	conf  ConfigItem
-	srv   *http.Server
-	route *Router
-	log   logger.Logger
-	wg    sync.WaitGroup
-}
+type (
+	//Server ...
+	Server struct {
+		conf  ConfigItem
+		srv   *http.Server
+		route *Route
+		log   logger.Logger
+		wg    sync.WaitGroup
+	}
+)
 
+//NewServer ...
 func NewServer(conf *HTTPConfig, log logger.Logger) *Server {
 	return NewCustomServer(conf.HTTP, log)
 }
 
+//NewCustomServer ...
 func NewCustomServer(conf ConfigItem, log logger.Logger) *Server {
 	srv := &Server{
 		conf:  conf,
@@ -43,55 +48,58 @@ func NewCustomServer(conf ConfigItem, log logger.Logger) *Server {
 	return srv
 }
 
-func (_srv *Server) checkConf() {
-	if _srv.conf.ReadTimeout == 0 {
-		_srv.conf.ReadTimeout = defaultTimeOut
+func (s *Server) checkConf() {
+	if s.conf.ReadTimeout == 0 {
+		s.conf.ReadTimeout = defaultTimeOut
 	}
-	if _srv.conf.WriteTimeout == 0 {
-		_srv.conf.WriteTimeout = defaultTimeOut
+	if s.conf.WriteTimeout == 0 {
+		s.conf.WriteTimeout = defaultTimeOut
 	}
 }
 
-func (_srv *Server) Router() *Router {
-	return _srv.route
+//Router ...
+func (s *Server) Router() Router {
+	return s.route
 }
 
-func (_srv *Server) Up() error {
-	if _srv.srv != nil {
-		return errors.Wrapf(serv.ErrServAlreadyRunning, "on %s", _srv.conf.Addr)
+//Up ...
+func (s *Server) Up() error {
+	if s.srv != nil {
+		return errors.Wrapf(serv.ErrServAlreadyRunning, "on %s", s.conf.Addr)
 	}
-	if len(_srv.conf.Addr) == 0 {
+	if len(s.conf.Addr) == 0 {
 		addr, err := serv.RandomPort("localhost")
 		if err != nil {
 			return errors.Wrap(err, "get random port")
 		}
-		_srv.conf.Addr = addr
+		s.conf.Addr = addr
 	}
-	_srv.srv = &http.Server{
-		Addr:         _srv.conf.Addr,
-		ReadTimeout:  _srv.conf.ReadTimeout,
-		WriteTimeout: _srv.conf.WriteTimeout,
-		IdleTimeout:  _srv.conf.IdleTimeout,
-		Handler:      _srv.route,
+	s.srv = &http.Server{
+		Addr:         s.conf.Addr,
+		ReadTimeout:  s.conf.ReadTimeout,
+		WriteTimeout: s.conf.WriteTimeout,
+		IdleTimeout:  s.conf.IdleTimeout,
+		Handler:      s.route,
 	}
-	_srv.log.Infof("http server started on %s", _srv.conf.Addr)
+	s.log.Infof("http server started on %s", s.conf.Addr)
 	go func() {
-		_srv.wg.Add(1)
+		s.wg.Add(1)
 		defer func() {
-			_srv.srv = nil
-			_srv.wg.Done()
+			s.srv = nil
+			s.wg.Done()
 		}()
-		if err := _srv.srv.ListenAndServe(); err != http.ErrServerClosed {
-			_srv.log.Errorf("http server stopped on %s with error: %+v", _srv.conf.Addr, err)
+		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
+			s.log.Errorf("http server stopped on %s with error: %+v", s.conf.Addr, err)
 			return
 		}
-		_srv.log.Infof("http server stopped on %s", _srv.conf.Addr)
+		s.log.Infof("http server stopped on %s", s.conf.Addr)
 	}()
 	return nil
 }
 
-func (_srv *Server) Down() error {
-	err := _srv.srv.Close()
-	_srv.wg.Wait()
+//Down ...
+func (s *Server) Down() error {
+	err := s.srv.Close()
+	s.wg.Wait()
 	return err
 }

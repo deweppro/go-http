@@ -25,6 +25,7 @@ var (
 )
 
 type (
+	//ConnectionHandler ...
 	ConnectionHandler func([]byte, io.Writer) error
 )
 

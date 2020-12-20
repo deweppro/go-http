@@ -17,11 +17,14 @@ import (
 )
 
 type (
+	//Message ...
 	Message struct {
 		Type int
 		Text []byte
 	}
-	Handler   func(out chan<- *Message, in <-chan *Message, ctx context.Context, cncl context.CancelFunc)
+	//Handler ...
+	Handler func(out chan<- *Message, in <-chan *Message, ctx context.Context, cncl context.CancelFunc)
+	//WebSocket ...
 	WebSocket struct {
 		buf   int
 		count int
@@ -31,7 +34,8 @@ type (
 	}
 )
 
-func New(countMsg, bufferSize int, log logger.Logger) *WebSocket {
+//New ...
+func NewServer(countMsg, bufferSize int, log logger.Logger) *WebSocket {
 	return &WebSocket{
 		log:   log,
 		count: countMsg,
@@ -52,8 +56,8 @@ func New(countMsg, bufferSize int, log logger.Logger) *WebSocket {
 	}
 }
 
-func (_sock *WebSocket) Handler(w http.ResponseWriter, r *http.Request, handler Handler) error {
-	conn, err := _sock.serv.Upgrade(w, r, nil)
+func (s *WebSocket) Handler(w http.ResponseWriter, r *http.Request, handler Handler) error {
+	conn, err := s.serv.Upgrade(w, r, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to set websocket upgrade")
 	}
@@ -61,8 +65,8 @@ func (_sock *WebSocket) Handler(w http.ResponseWriter, r *http.Request, handler 
 	ctx, cncl := context.WithCancel(context.Background())
 	defer cncl()
 
-	in := make(chan *Message, _sock.count)
-	out := make(chan *Message, _sock.count)
+	in := make(chan *Message, s.count)
+	out := make(chan *Message, s.count)
 	go handler(out, in, ctx, cncl)
 
 	go func() {
@@ -71,16 +75,16 @@ func (_sock *WebSocket) Handler(w http.ResponseWriter, r *http.Request, handler 
 			case <-ctx.Done():
 				err := conn.WriteMessage(websocket.CloseMessage, []byte(`Bye bye!`))
 				if err != nil && errors.Is(err, websocket.ErrCloseSent) {
-					_sock.log.Errorf("websocket write message: %s", err.Error())
+					s.log.Errorf("websocket write message: %s", err.Error())
 				}
 				return
 			case d := <-out:
 				if err := conn.WriteMessage(d.Type, d.Text); err != nil {
-					_sock.log.Errorf("websocket write message: %s", err.Error())
+					s.log.Errorf("websocket write message: %s", err.Error())
 				}
 				d.Type = 0
 				d.Text = d.Text[:0]
-				_sock.pool.Put(d)
+				s.pool.Put(d)
 			}
 		}
 	}()
@@ -90,7 +94,7 @@ func (_sock *WebSocket) Handler(w http.ResponseWriter, r *http.Request, handler 
 		if err != nil || msgType == websocket.CloseMessage {
 			return errors.Wrap(err, "websocket read message")
 		}
-		rm := _sock.pool.Get().(*Message)
+		rm := s.pool.Get().(*Message)
 		rm.Type = msgType
 		rm.Text = msg
 		in <- rm
