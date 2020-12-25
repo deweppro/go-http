@@ -9,7 +9,9 @@
 
 ## Web server
 
-Set route version from client: ```Accept: application/vnd.v1+json```
+Set route version for request: ```Accept: application/vnd.v1+json```
+
+Set sign for request: ```Signature: keyId="<sign id>",algorithm="hmac-sha256",signature="<sign hash>"```
 
 ```go
 package main

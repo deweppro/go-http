@@ -8,8 +8,12 @@ package client
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net"
@@ -21,7 +25,10 @@ import (
 )
 
 const (
-	version = `application/vnd.v%d+json`
+	versionKey   = `Accept`
+	versionValue = `application/vnd.v%d+json`
+	signKey      = `Signature`
+	signValue    = `keyId="%s",algorithm="hmac-sha256",signature="%s"`
 )
 
 type (
@@ -31,6 +38,8 @@ type (
 		headers web.Headers
 		debug   bool
 		writer  io.Writer
+		signID  string
+		sign    hash.Hash
 	}
 )
 
@@ -68,6 +77,11 @@ func (v *Client) WithHeaders(heads web.Headers) {
 	v.headers = heads
 }
 
+//WithSign sign request
+func (v *Client) WithSign(id, secret string) {
+	v.signID, v.sign = id, hmac.New(sha256.New, []byte(secret))
+}
+
 //Call make request to server
 func (v *Client) Call(method, url string, ver uint64, in json.Marshaler, out json.Unmarshaler) (int, error) {
 	var (
@@ -93,8 +107,11 @@ func (v *Client) Call(method, url string, ver uint64, in json.Marshaler, out jso
 			req.Header.Set(k, v)
 		}
 	}
-	req.Header.Set("Accept", fmt.Sprintf(version, ver))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.Header.Set(versionKey, fmt.Sprintf(versionValue, ver))
+	if v.sign != nil {
+		req.Header.Set(signKey, fmt.Sprintf(signValue, v.signID, v.makeSign(body)))
+	}
 
 	resp, err := v.cli.Do(req)
 	if err != nil {
@@ -112,7 +129,7 @@ func (v *Client) Call(method, url string, ver uint64, in json.Marshaler, out jso
 		}
 	}
 
-	v.writeDebug(code, method, url, ver, body, err)
+	v.writeDebug(code, method, url, ver, body, v.signID, err)
 
 	switch err {
 	case nil:
@@ -122,6 +139,12 @@ func (v *Client) Call(method, url string, ver uint64, in json.Marshaler, out jso
 	default:
 		return code, err
 	}
+}
+
+func (v *Client) makeSign(b []byte) string {
+	defer v.sign.Reset()
+	v.sign.Write(b)
+	return hex.EncodeToString(v.sign.Sum(nil))
 }
 
 func (v *Client) readBody(rc io.ReadCloser, resp json.Unmarshaler) ([]byte, error) {
@@ -138,8 +161,8 @@ func (v *Client) readBody(rc io.ReadCloser, resp json.Unmarshaler) ([]byte, erro
 	return b, nil
 }
 
-func (v *Client) writeDebug(code int, method, path string, ver uint64, body []byte, err error) {
+func (v *Client) writeDebug(code int, method, path string, ver uint64, body []byte, signID string, err error) {
 	if v.debug {
-		fmt.Fprintf(v.writer, "[%d] %s:%s ver:%d err: %+v raw:%s \n", code, method, path, ver, err, body)
+		fmt.Fprintf(v.writer, "[%d] %s:%s ver:%d err: %+v signID:%s raw:%s \n", code, method, path, ver, err, signID, body)
 	}
 }
