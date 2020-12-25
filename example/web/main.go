@@ -22,9 +22,16 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
-			return ctx.Write(200, []byte("hello"), web.Headers{"x-trace-id": "999-999-999"})
-		}},
+		web.Handler{
+			Method: []string{http.MethodGet},
+			Path:   "/",
+			Call: web.VerCaller{
+				// version 1 for route /
+				web.DefaultVersion: func(ctx *web.Context) error {
+					return ctx.Write(200, []byte("hello"), web.Headers{"x-trace-id": "999-999-999"})
+				},
+			},
+		},
 	)
 
 	<-time.After(time.Minute)

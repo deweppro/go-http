@@ -9,6 +9,8 @@
 
 ## Web server
 
+Set route version from client: ```Accept: application/vnd.v1+json```
+
 ```go
 package main
 
@@ -28,9 +30,16 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
-			return ctx.Write(200, []byte("hello"), web.Headers{"x-trace-id": "999-999-999"})
-		}},
+		web.Handler{
+			Method: []string{http.MethodGet},
+			Path:   "/",
+			Call: web.VerCaller{
+				// version 1 for route /
+				web.DefaultVersion: func(ctx *web.Context) error {
+					return ctx.Write(200, []byte("hello"), web.Headers{"x-trace-id": "999-999-999"})
+				},
+			},
+		},
 	)
 
 	<-time.After(time.Minute)
@@ -125,25 +134,31 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
-			return wsock.Handler(ctx.Writer, ctx.Reader,
-				func(out chan<- *ws.Message, in <-chan *ws.Message, ctx context.Context, cncl context.CancelFunc) {
-					i := 0
-					for {
-						select {
-						case <-ctx.Done():
-							return
-						case msg := <-in:
-							out <- msg
-							if i == 3 {
-								cncl()
+		web.Handler{
+			Method: []string{http.MethodGet},
+			Path:   "/",
+			Call: web.VerCaller{
+				web.DefaultVersion: func(ctx *web.Context) error {
+					return wsock.Handler(ctx.Writer, ctx.Reader,
+						func(out chan<- *ws.Message, in <-chan *ws.Message, ctx context.Context, cncl context.CancelFunc) {
+							i := 0
+							for {
+								select {
+								case <-ctx.Done():
+									return
+								case msg := <-in:
+									out <- msg
+									if i == 3 {
+										cncl()
+									}
+									i++
+								}
 							}
-							i++
-						}
-					}
+						},
+					)
 				},
-			)
-		}})
+			},
+		})
 
 	<-time.After(time.Minute)
 
