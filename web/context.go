@@ -7,11 +7,25 @@
 package web
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+)
+
+const (
+	versionHeaderKey    = `Accept`
+	versionHeaderRegexp = `application\/vnd.v(\d+)\+json`
+	contentTypeKey      = `Content-Type`
+	contentTypeJson     = `application/json; charset=utf-8`
+)
+
+var (
+	vercomp = regexp.MustCompile(versionHeaderRegexp)
 )
 
 type (
@@ -52,6 +66,23 @@ func (c *Context) Write(code int, body []byte, heads Headers) error {
 	return errors.Wrap(err, "context write")
 }
 
+//JSON ...
+func (c *Context) JSON(code int, model json.Marshaler, heads Headers) error {
+	body, err := model.MarshalJSON()
+	if err != nil {
+		return errors.Wrap(err, "marshal json")
+	}
+	if heads != nil {
+		for k, v := range heads {
+			c.Writer.Header().Set(k, v)
+		}
+	}
+	c.Writer.Header().Set(contentTypeKey, contentTypeJson)
+	c.Writer.WriteHeader(code)
+	_, err = c.Writer.Write(body)
+	return errors.Wrap(err, "context write")
+}
+
 //Redirect ...
 func (c *Context) Redirect(url string) error {
 	c.Writer.Header().Set("Location", url)
@@ -77,8 +108,22 @@ func (c *Context) SetCookie(key, value string, ttl time.Duration) {
 //GetCookies ...
 func (c *Context) GetCookies() map[string]*http.Cookie {
 	result := make(map[string]*http.Cookie)
-	for _, c := range c.Reader.Cookies() {
-		result[c.Name] = c
+	for _, v := range c.Reader.Cookies() {
+		result[v.Name] = v
 	}
 	return result
+}
+
+//Version ...
+func (c *Context) Version() uint64 {
+	d := c.Reader.Header.Get(versionHeaderKey)
+	result := vercomp.FindSubmatch([]byte(d))
+	if len(result) != 2 {
+		return DefaultVersion
+	}
+	v, err := strconv.ParseUint(string(result[1]), 10, 32)
+	if err != nil || v < 1 {
+		return DefaultVersion
+	}
+	return v
 }

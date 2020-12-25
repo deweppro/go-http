@@ -26,25 +26,31 @@ func main() {
 	}
 
 	srv.Router().AddRoutes(
-		web.Handler{Method: []string{http.MethodGet}, Path: "/", Call: func(ctx *web.Context) error {
-			return wsock.Handler(ctx.Writer, ctx.Reader,
-				func(out chan<- *ws.Message, in <-chan *ws.Message, ctx context.Context, cncl context.CancelFunc) {
-					i := 0
-					for {
-						select {
-						case <-ctx.Done():
-							return
-						case msg := <-in:
-							out <- msg
-							if i == 3 {
-								cncl()
+		web.Handler{
+			Method: []string{http.MethodGet},
+			Path:   "/",
+			Call: web.VerCaller{
+				web.DefaultVersion: func(ctx *web.Context) error {
+					return wsock.Handler(ctx.Writer, ctx.Reader,
+						func(out chan<- *ws.Message, in <-chan *ws.Message, ctx context.Context, cncl context.CancelFunc) {
+							i := 0
+							for {
+								select {
+								case <-ctx.Done():
+									return
+								case msg := <-in:
+									out <- msg
+									if i == 3 {
+										cncl()
+									}
+									i++
+								}
 							}
-							i++
-						}
-					}
+						},
+					)
 				},
-			)
-		}})
+			},
+		})
 
 	<-time.After(time.Minute)
 

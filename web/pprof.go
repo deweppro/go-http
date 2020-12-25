@@ -52,10 +52,12 @@ func (d *Debug) Handlers() []Handler {
 	}
 }
 
-func (d *Debug) call(cb func(http.ResponseWriter, *http.Request)) Caller {
-	return func(message *Context) error {
-		cb(message.Writer, message.Reader)
-		return nil
+func (d *Debug) call(cb func(http.ResponseWriter, *http.Request)) VerCaller {
+	return VerCaller{
+		DefaultVersion: func(message *Context) error {
+			cb(message.Writer, message.Reader)
+			return nil
+		},
 	}
 }
 

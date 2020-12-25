@@ -13,6 +13,8 @@ import (
 	"github.com/deweppro/go-logger"
 )
 
+const DefaultVersion uint64 = 1
+
 type (
 	//Caller ...
 	Caller func(*Context) error
@@ -22,12 +24,13 @@ type (
 	Handler struct {
 		Method     []string
 		Path       string
-		Call       Caller
+		Call       VerCaller
 		Middleware MiddlewareCaller
 	}
+	VerCaller map[uint64]Caller
 	//RouteItem ...
 	RouteItem struct {
-		Call       Caller
+		Call       VerCaller
 		Middleware MiddlewareCaller
 	}
 	//Route ...
@@ -66,6 +69,14 @@ func (o *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	call, ok := route.Call[msg.Version()]
+	if !ok || call == nil {
+		if err := msg.Write(http.StatusNotFound, nil, nil); err != nil {
+			o.log.Errorf("route version not found: %s", err.Error())
+		}
+		return
+	}
+
 	if route.Middleware != nil {
 		if code, err := route.Middleware(msg); err != nil {
 			if er := msg.Write(code, []byte(err.Error()), nil); er != nil {
@@ -75,7 +86,7 @@ func (o *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := route.Call(msg); err != nil {
+	if err := call(msg); err != nil {
 		if er := msg.Write(http.StatusInternalServerError, []byte(err.Error()), nil); er != nil {
 			o.log.Errorf("call: %s", er.Error())
 		}
