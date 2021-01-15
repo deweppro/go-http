@@ -4,7 +4,7 @@
  * license that can be found in the LICENSE file.
  */
 
-package go_http
+package proto
 
 import (
 	"bytes"
@@ -13,10 +13,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -87,22 +83,12 @@ func (o *Common) GetSignature() (s Sign, err error) {
 	return
 }
 
-func (o *Common) CreateUUID() string {
-	rnd, err := uuid.NewRandom()
-	if err != nil {
-		return strconv.FormatInt(time.Now().UnixNano(), 16)
-	}
-	return rnd.String()
+func (o *Common) GetUUID() string {
+	return o.Meta.Get(UUIDKey)
 }
 
-func (o *Common) GetUUID() (v string) {
-	v = o.Meta.Get(UUIDKey)
-	if len(v) > 0 {
-		return
-	}
-	v = o.CreateUUID()
-	o.SetUUID(v)
-	return
+func (o *Common) UpdateUUID() {
+	o.SetUUID(CreateUUID())
 }
 
 func (o *Common) SetUUID(v string) {

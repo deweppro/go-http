@@ -4,14 +4,18 @@
  * license that can be found in the LICENSE file.
  */
 
-package go_http
+package proto
 
 import (
 	"io"
 	"io/ioutil"
 	"net"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
 )
@@ -24,7 +28,6 @@ var (
 	ErrClientNotFound     = errors.New(`client not found`)
 )
 
-//RandomPort ...
 func RandomPort(host string) (string, error) {
 	host = strings.Join([]string{host, "0"}, ":")
 	addr, err := net.ResolveTCPAddr("tcp", host)
@@ -38,18 +41,24 @@ func RandomPort(host string) (string, error) {
 	return l.Addr().String(), l.Close()
 }
 
-//GetFD ...
 func GetFD(c net.Conn) int {
 	fd := reflect.Indirect(reflect.ValueOf(c)).FieldByName("fd")
 	pfd := reflect.Indirect(fd).FieldByName("pfd")
 	return int(pfd.FieldByName("Sysfd").Int())
 }
 
-//Reader ...
 func Reader(rc io.ReadCloser) ([]byte, error) {
 	b, err := ioutil.ReadAll(rc)
 	if err != nil {
 		return nil, err
 	}
 	return b, rc.Close()
+}
+
+func CreateUUID() string {
+	rnd, err := uuid.NewRandom()
+	if err != nil {
+		return strconv.FormatInt(time.Now().UnixNano(), 16)
+	}
+	return rnd.String()
 }

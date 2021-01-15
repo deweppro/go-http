@@ -4,22 +4,20 @@
  * license that can be found in the LICENSE file.
  */
 
-package web
+package websrv
 
 import (
-	"github.com/deweppro/go-http/v2/servers/http"
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
 )
 
 //go:generate easyjson
 
 //easyjson:json
 type (
-	//Config ...
 	Config struct {
-		HTTP    http.ConfigItem `yaml:"http" json:"http"`
-		Headers Headers         `yaml:"headers" json:"headers"`
+		HTTP    httpsrv.ConfigItem `yaml:"http" json:"http"`
+		Headers Headers            `yaml:"headers" json:"headers"`
 	}
-	//Headers ...
 	Headers struct {
 		ProxyHeaders   []string          `yaml:"proxy_headers" json:"proxy_headers"`
 		DefaultHeaders map[string]string `yaml:"default_headers" json:"default_headers"`

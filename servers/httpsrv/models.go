@@ -4,7 +4,7 @@
  * license that can be found in the LICENSE file.
  */
 
-package http
+package httpsrv
 
 import (
 	"time"
@@ -14,11 +14,9 @@ import (
 
 //easyjson:json
 type (
-	//Config ...
 	Config struct {
 		HTTP ConfigItem `yaml:"http" json:"http"`
 	}
-	//ConfigItem ...
 	ConfigItem struct {
 		Addr         string        `yaml:"addr" json:"addr"`
 		ReadTimeout  time.Duration `yaml:"read_timeout" json:"read_timeout"`

@@ -4,19 +4,19 @@
  * license that can be found in the LICENSE file.
  */
 
-package debug
+package debugsrv
 
 import (
-	http2 "net/http"
+	"net/http"
 	"net/http/pprof"
 
-	"github.com/deweppro/go-http/v2/servers/http"
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
 	"github.com/deweppro/go-logger"
 )
 
 type (
 	Debug struct {
-		srv *http.Server
+		srv *httpsrv.Server
 		log logger.Logger
 	}
 )
@@ -25,13 +25,13 @@ func New(conf *Config, log logger.Logger) *Debug {
 	return NewCustom(conf.Debug, log)
 }
 
-func NewCustom(conf http.ConfigItem, log logger.Logger) *Debug {
+func NewCustom(conf httpsrv.ConfigItem, log logger.Logger) *Debug {
 	d := &Debug{log: log}
-	d.srv = http.NewCustomServer(conf, d, log)
+	d.srv = httpsrv.NewCustomServer(conf, d, log)
 	return d
 }
 
-func (d *Debug) ServeHTTP(w http2.ResponseWriter, r *http2.Request) {
+func (d *Debug) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/debug/pprof/", "/debug/pprof/goroutine", "/debug/pprof/allocs",
 		"/debug/pprof/block", "/debug/pprof/heap", "/debug/pprof/mutex",
@@ -49,7 +49,7 @@ func (d *Debug) ServeHTTP(w http2.ResponseWriter, r *http2.Request) {
 		pprof.Trace(w, r)
 	default:
 		d.log.Errorf("fail request to: %s", r.URL.Path)
-		w.WriteHeader(http2.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 

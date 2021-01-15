@@ -4,7 +4,7 @@
  * license that can be found in the LICENSE file.
  */
 
-package http
+package httpsrv
 
 import (
 	"net/http"
@@ -31,12 +31,10 @@ type (
 	}
 )
 
-//NewServer ...
 func NewServer(c *Config, h http.Handler, l logger.Logger) *Server {
 	return NewCustomServer(c.HTTP, h, l)
 }
 
-//NewCustomServer ...
 func NewCustomServer(c ConfigItem, h http.Handler, l logger.Logger) *Server {
 	srv := &Server{
 		conf: c,
@@ -56,7 +54,6 @@ func (s *Server) checkConf() {
 	}
 }
 
-//Up ...
 func (s *Server) Up() error {
 	if s.srv != nil {
 		return errors.Wrapf(proto.ErrServAlreadyRunning, "on %s", s.conf.Addr)
@@ -93,7 +90,6 @@ func (s *Server) run() {
 	s.log.Infof("http server stopped on %s", s.conf.Addr)
 }
 
-//Down ...
 func (s *Server) Down() error {
 	err := s.srv.Close()
 	s.wg.Wait()

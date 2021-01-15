@@ -5,7 +5,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/deweppro/go-http)](https://goreportcard.com/report/github.com/deweppro/go-http)
 [![Build Status](https://travis-ci.com/deweppro/go-http.svg?branch=main)](https://travis-ci.com/deweppro/go-http)
 
-see:
-* [blank.server](servers/http/README.md) - blank of http server
-* [debug.server](servers/debug/README.md) - init debug server with custom setting
-* [web.server](servers/web/README.md) - web server with proto
+# Install
+
+```
+go get -u github.com/deweppro/go-http/v2
+```
+
+# Example
+
+* [blank.server](servers/httpsrv/README.md) - Using blank of http server
+* [debug.server](servers/debugsrv/README.md) - Using debug server with custom setting
+* [web.server + web.client + proto](servers/websrv/README.md) - Using the server and client with the proto

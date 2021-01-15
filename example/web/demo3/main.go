@@ -12,9 +12,9 @@ import (
 	"time"
 
 	proto "github.com/deweppro/go-http/v2"
-	web2 "github.com/deweppro/go-http/v2/clients/web"
-	"github.com/deweppro/go-http/v2/servers/http"
-	"github.com/deweppro/go-http/v2/servers/web"
+	"github.com/deweppro/go-http/v2/clients/webcli"
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
+	"github.com/deweppro/go-http/v2/servers/websrv"
 	"github.com/deweppro/go-logger"
 )
 
@@ -52,7 +52,7 @@ func main() {
 		"demo1": []string{"http://localhost:8091"},
 	}}
 
-	cli := web2.NewClient()
+	cli := webcli.NewClient()
 	cli.Debug(true, os.Stdout)
 	cli.WithSign(sign)
 
@@ -67,17 +67,17 @@ func main() {
 	protoServer := proto.NewServer()
 	protoServer.Handler("/", 1, (&Demo{}).Index)
 
-	conf := func(port int) *web.Config {
-		return &web.Config{
-			HTTP: http.ConfigItem{Addr: fmt.Sprintf("localhost:%d", port)},
-			Headers: web.Headers{
+	conf := func(port int) *websrv.Config {
+		return &websrv.Config{
+			HTTP: httpsrv.ConfigItem{Addr: fmt.Sprintf("localhost:%d", port)},
+			Headers: websrv.Headers{
 				ProxyHeaders:   []string{"X-Forwarded-For", "Accept-Language", "User-Agent"},
 				DefaultHeaders: map[string]string{"Content-Type": "text/html"},
 			},
 		}
 	}
 
-	srv := web.NewServer(conf(8090), protoServer, logger.Default())
+	srv := websrv.NewServer(conf(8090), protoServer, logger.Default())
 	if err := srv.Up(); err != nil {
 		panic(err)
 	}
@@ -87,7 +87,7 @@ func main() {
 		}
 	}()
 
-	srv2 := web.NewServer(conf(8091), protoServer, logger.Default())
+	srv2 := websrv.NewServer(conf(8091), protoServer, logger.Default())
 	if err := srv2.Up(); err != nil {
 		panic(err)
 	}
@@ -104,7 +104,6 @@ func main() {
 	*/
 
 	req := proto.NewRequest()
-	req.SetUUID(req.CreateUUID())
 	res := proto.NewResponse()
 
 	/**

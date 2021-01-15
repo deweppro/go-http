@@ -12,8 +12,8 @@ import (
 	"time"
 
 	proto "github.com/deweppro/go-http/v2"
-	"github.com/deweppro/go-http/v2/servers/http"
-	"github.com/deweppro/go-http/v2/servers/web"
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
+	"github.com/deweppro/go-http/v2/servers/websrv"
 	"github.com/deweppro/go-logger"
 )
 
@@ -38,15 +38,15 @@ func main() {
 	prt := proto.NewServer()
 	prt.Handler("/", 1, (&Simple{}).Index)
 
-	conf := &web.Config{
-		HTTP: http.ConfigItem{Addr: "localhost:8090"},
-		Headers: web.Headers{
+	conf := &websrv.Config{
+		HTTP: httpsrv.ConfigItem{Addr: "localhost:8090"},
+		Headers: websrv.Headers{
 			ProxyHeaders:   []string{"X-Forwarded-For", "Accept-Language", "User-Agent"},
 			DefaultHeaders: map[string]string{"Content-Type": "text/html"},
 		},
 	}
 
-	srv := web.NewServer(conf, prt, logger.Default())
+	srv := websrv.NewServer(conf, prt, logger.Default())
 	if err := srv.Up(); err != nil {
 		panic(err)
 	}

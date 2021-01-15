@@ -4,18 +4,17 @@
  * license that can be found in the LICENSE file.
  */
 
-package debug
+package debugsrv
 
 import (
-	"github.com/deweppro/go-http/v2/servers/http"
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
 )
 
 //go:generate easyjson
 
 //easyjson:json
 type (
-	//DebugConfig ...
 	Config struct {
-		Debug http.ConfigItem `yaml:"debug" json:"debug"`
+		Debug httpsrv.ConfigItem `yaml:"debug" json:"debug"`
 	}
 )

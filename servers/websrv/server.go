@@ -4,20 +4,21 @@
  * license that can be found in the LICENSE file.
  */
 
-package web
+package websrv
 
 import (
 	"net/http"
 
+	"github.com/deweppro/go-http/v2/servers/httpsrv"
+
 	proto "github.com/deweppro/go-http/v2"
-	serv "github.com/deweppro/go-http/v2/servers/http"
 	"github.com/deweppro/go-logger"
 )
 
 type (
 	Server struct {
 		conf *Config
-		srv  *serv.Server
+		srv  *httpsrv.Server
 		hub  *proto.Server
 		log  logger.Logger
 	}
@@ -29,7 +30,7 @@ func NewServer(c *Config, h *proto.Server, l logger.Logger) *Server {
 		hub:  h,
 		log:  l,
 	}
-	s.srv = serv.NewCustomServer(c.HTTP, s, l)
+	s.srv = httpsrv.NewCustomServer(c.HTTP, s, l)
 	return s
 }
 
