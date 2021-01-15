@@ -54,7 +54,6 @@ func main() {
 
 	cli := webcli.NewClient()
 	cli.Debug(true, os.Stdout)
-	cli.WithSign(sign)
 
 	protoClient := proto.NewClient(pool)
 	protoClient.Client("demo0", cli.Call)
@@ -113,6 +112,7 @@ func main() {
 	if err := req.EncodeJSON(A{Name: "A"}); err != nil {
 		fmt.Println("client encode", err)
 	}
+	req.CreateSign(sign)
 	if err := protoClient.Call("demo0", req, res); err != nil {
 		fmt.Println(err)
 	}
@@ -130,6 +130,7 @@ func main() {
 	if err := req.EncodeJSON(A{Name: "C"}); err != nil {
 		fmt.Println("client encode", err)
 	}
+	req.CreateSign(sign)
 	if err := protoClient.Call("demo1", req, res); err != nil {
 		fmt.Println(err)
 	}
@@ -144,6 +145,7 @@ func main() {
 	case 3
 	*/
 
+	req.CreateSign(sign)
 	if err := protoClient.Call("demo2", req, res); err != nil {
 		fmt.Println(err)
 	}
@@ -153,6 +155,7 @@ func main() {
 	*/
 
 	req.SetVersion(10)
+	req.CreateSign(sign)
 	if err := protoClient.Call("demo1", req, res); err != nil {
 		fmt.Println(err)
 	}

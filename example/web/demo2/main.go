@@ -53,7 +53,6 @@ func main() {
 
 	cli := webcli.NewClient()
 	cli.Debug(true, os.Stdout)
-	cli.WithSign(sign)
 
 	protoClient := proto.NewClient(pool)
 	protoClient.Client("demo", cli.Call)
@@ -95,7 +94,7 @@ func main() {
 	if err := req.EncodeJSON(A{Name: "A"}); err != nil {
 		fmt.Println("client encode", err)
 	}
-
+	req.CreateSign(sign)
 	if err := protoClient.Call("demo", req, res); err != nil {
 		fmt.Println(err)
 	}

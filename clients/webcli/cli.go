@@ -23,7 +23,6 @@ type (
 	Client struct {
 		cli     *http.Client
 		headers http.Header
-		sign    *proto.Signer
 		debug   bool
 		writer  io.Writer
 	}
@@ -61,11 +60,6 @@ func (v *Client) WithHeaders(heads http.Header) {
 	v.headers = heads
 }
 
-//WithSign sign request
-func (v *Client) WithSign(s *proto.Signer) {
-	v.sign = s
-}
-
 //Call make request to server
 func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response) error {
 	add, err := pool.Pool()
@@ -78,9 +72,6 @@ func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response)
 	}
 
 	in.SetVersion(in.GetVersion())
-	if v.sign != nil {
-		in.CreateSign(v.sign)
-	}
 	in.UpdateUUID()
 
 	req.Header.Set("Connection", "keep-alive")

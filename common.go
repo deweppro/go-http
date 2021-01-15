@@ -72,6 +72,17 @@ func (o *Common) CreateSign(s *Signer) {
 	o.Meta.Set(SignKey, fmt.Sprintf(signValueTmpl, s.ID(), s.CreateString(o.Body)))
 }
 
+func (o *Common) ValidateSign(s *Signer) bool {
+	sign, err := o.GetSignature()
+	if err != nil {
+		return false
+	}
+	if sign.ID != s.ID() {
+		return false
+	}
+	return s.Validate(o.Body, sign.Signature)
+}
+
 func (o *Common) GetSignature() (s Sign, err error) {
 	d := o.Meta.Get(SignKey)
 	r := signcomp.FindSubmatch([]byte(d))
