@@ -4,11 +4,9 @@ package debugsrv
 
 import (
 	json "encoding/json"
-	httpsrv "github.com/deweppro/go-http/v2/servers/httpsrv"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
-	time "time"
 )
 
 // suppress unused package warning
@@ -39,7 +37,7 @@ func easyjsonD2b7633eDecodeGithubComDewepproGoHttpV2ServersDebugsrv(in *jlexer.L
 		}
 		switch key {
 		case "debug":
-			easyjsonD2b7633eDecodeGithubComDewepproGoHttpV2ServersHttpsrv(in, &out.Debug)
+			(out.Debug).UnmarshalEasyJSON(in)
 		default:
 			in.SkipRecursive()
 		}
@@ -57,7 +55,7 @@ func easyjsonD2b7633eEncodeGithubComDewepproGoHttpV2ServersDebugsrv(out *jwriter
 	{
 		const prefix string = ",\"debug\":"
 		out.RawString(prefix[1:])
-		easyjsonD2b7633eEncodeGithubComDewepproGoHttpV2ServersHttpsrv(out, in.Debug)
+		(in.Debug).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }
@@ -84,67 +82,4 @@ func (v *Config) UnmarshalJSON(data []byte) error {
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Config) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonD2b7633eDecodeGithubComDewepproGoHttpV2ServersDebugsrv(l, v)
-}
-func easyjsonD2b7633eDecodeGithubComDewepproGoHttpV2ServersHttpsrv(in *jlexer.Lexer, out *httpsrv.ConfigItem) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "addr":
-			out.Addr = string(in.String())
-		case "read_timeout":
-			out.ReadTimeout = time.Duration(in.Int64())
-		case "write_timeout":
-			out.WriteTimeout = time.Duration(in.Int64())
-		case "idle_timeout":
-			out.IdleTimeout = time.Duration(in.Int64())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjsonD2b7633eEncodeGithubComDewepproGoHttpV2ServersHttpsrv(out *jwriter.Writer, in httpsrv.ConfigItem) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"addr\":"
-		out.RawString(prefix[1:])
-		out.String(string(in.Addr))
-	}
-	{
-		const prefix string = ",\"read_timeout\":"
-		out.RawString(prefix)
-		out.Int64(int64(in.ReadTimeout))
-	}
-	{
-		const prefix string = ",\"write_timeout\":"
-		out.RawString(prefix)
-		out.Int64(int64(in.WriteTimeout))
-	}
-	{
-		const prefix string = ",\"idle_timeout\":"
-		out.RawString(prefix)
-		out.Int64(int64(in.IdleTimeout))
-	}
-	out.RawByte('}')
 }

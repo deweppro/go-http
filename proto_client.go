@@ -24,7 +24,6 @@ func NewClient(conf Configer) *Client {
 }
 
 func (o *Client) Call(name string, in *Request, out *Response) error {
-	in.UpdateUUID()
 	if c, ok := o.cli[name]; ok {
 		return c(o.conf.Get(name), in, out)
 	}

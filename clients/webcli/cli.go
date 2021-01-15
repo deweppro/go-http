@@ -81,7 +81,7 @@ func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response)
 	if v.sign != nil {
 		in.CreateSign(v.sign)
 	}
-	in.SetUUID(in.CreateUUID())
+	in.UpdateUUID()
 
 	req.Header.Set("Connection", "keep-alive")
 	for k := range v.headers {
