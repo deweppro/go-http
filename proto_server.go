@@ -22,7 +22,7 @@ func NewServer() *Server {
 }
 
 func (o *Server) Call(in *Request, out *Response) {
-	if c, ok := o.routes[o.route(in.Path, in.GetVersion())]; ok {
+	if c, ok := o.routes[o.route(in.URL.Path, in.GetVersion())]; ok {
 		c(in, out)
 		return
 	}

@@ -38,6 +38,7 @@ const (
 	StatusCodeUnauthorized uint = 3
 	StatusCodeForbidden    uint = 4
 	StatusCodeServerError  uint = 5
+	StatusCodeRedirect     uint = 6
 )
 
 var (
@@ -143,6 +144,8 @@ func Code2HTTPCode(v uint) int {
 		return http.StatusForbidden
 	case StatusCodeServerError:
 		return http.StatusInternalServerError
+	case StatusCodeRedirect:
+		return http.StatusMovedPermanently
 	default:
 		return http.StatusOK
 	}
@@ -162,6 +165,8 @@ func HTTPCode2Code(v int) uint {
 		return StatusCodeForbidden
 	case http.StatusInternalServerError:
 		return StatusCodeServerError
+	case http.StatusMovedPermanently:
+		return StatusCodeRedirect
 	default:
 		return StatusCodeOK
 	}

@@ -12,7 +12,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	proto "github.com/deweppro/go-http/v2"
@@ -62,11 +61,12 @@ func (v *Client) WithHeaders(heads http.Header) {
 
 //Call make request to server
 func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response) error {
-	add, err := pool.Pool()
+	addr, err := pool.Pool()
 	if err != nil {
 		return errors.Wrap(err, "get address from pool")
 	}
-	req, err := http.NewRequest(http.MethodPost, add+"/"+strings.TrimLeft(in.Path, "/"), bytes.NewReader(in.Body))
+	in.URL.Host = addr
+	req, err := http.NewRequest(http.MethodPost, in.URL.String(), bytes.NewReader(in.Body))
 	if err != nil {
 		return errors.Wrap(err, "create request")
 	}
@@ -92,7 +92,7 @@ func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response)
 		fmt.Fprintf(
 			v.writer,
 			"code<%d> path<%s> ver<%d> uuid<%s> sign<%s> in<%s> out<%s> err<%+v>\n",
-			out.GetStatusCode(), in.Path, in.GetVersion(), in.GetUUID(),
+			out.GetStatusCode(), in.URL.String(), in.GetVersion(), in.GetUUID(),
 			in.Meta.Get(proto.SignKey), in.Body, out.Body, err,
 		)
 	}

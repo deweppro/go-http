@@ -9,13 +9,14 @@ package proto
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
 type (
 	Request struct {
 		Common
-		Path string
+		URL *url.URL
 	}
 )
 
@@ -27,7 +28,7 @@ func NewRequest() *Request {
 }
 
 func (r *Request) UpdateFromHTTP(v *http.Request, headers ...string) (err error) {
-	r.Path = v.URL.Path
+	r.URL = v.URL
 	r.Meta = make(http.Header)
 	for _, item := range append(headers, defaultRequestHeaders...) {
 		r.Meta.Set(item, v.Header.Get(item))
