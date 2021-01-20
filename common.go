@@ -50,8 +50,9 @@ var (
 
 type (
 	Common struct {
-		Meta http.Header
-		Body []byte
+		cookies map[string]*http.Cookie
+		Meta    http.Header
+		Body    []byte
 	}
 
 	Sign struct {
@@ -128,6 +129,19 @@ func (o *Common) EncodeGob(v interface{}) (err error) {
 	err = gob.NewEncoder(&buf).Encode(v)
 	o.Body = buf.Bytes()
 	return
+}
+
+func (o *Common) GetCookie(name string) (*http.Cookie, error) {
+	if v, ok := o.cookies[name]; ok {
+		return v, nil
+	}
+	return nil, ErrCookieNotFound
+}
+
+func (o *Common) SetCookie(v ...*http.Cookie) {
+	for _, item := range v {
+		o.cookies[item.Name] = item
+	}
 }
 
 func Code2HTTPCode(v uint) int {

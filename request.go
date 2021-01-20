@@ -22,7 +22,10 @@ type (
 
 func NewRequest() *Request {
 	r := &Request{
-		Common: Common{Meta: make(http.Header)},
+		Common: Common{
+			cookies: make(map[string]*http.Cookie),
+			Meta:    make(http.Header),
+		},
 	}
 	return r
 }
@@ -33,6 +36,7 @@ func (r *Request) UpdateFromHTTP(v *http.Request, headers ...string) (err error)
 	for _, item := range append(headers, defaultRequestHeaders...) {
 		r.Meta.Set(item, v.Header.Get(item))
 	}
+	r.SetCookie(v.Cookies()...)
 	r.Body, err = Reader(v.Body)
 	return
 }

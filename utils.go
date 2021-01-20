@@ -26,6 +26,7 @@ var (
 	ErrInvalidSignature   = errors.New(`invalid signature format`)
 	ErrEmptyPool          = errors.New(`pool is empty`)
 	ErrClientNotFound     = errors.New(`client not found`)
+	ErrCookieNotFound     = errors.New(`cookie not found`)
 )
 
 func RandomPort(host string) (string, error) {

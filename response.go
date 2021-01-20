@@ -22,7 +22,10 @@ type (
 
 func NewResponse() *Response {
 	r := &Response{
-		Common: Common{Meta: make(http.Header)},
+		Common: Common{
+			cookies: make(map[string]*http.Cookie),
+			Meta:    make(http.Header),
+		},
 	}
 	return r
 }
@@ -30,6 +33,9 @@ func NewResponse() *Response {
 func (r *Response) WriteToHTTP(w http.ResponseWriter) error {
 	for key := range r.Meta {
 		w.Header().Set(key, r.Meta.Get(key))
+	}
+	for _, c := range r.cookies {
+		http.SetCookie(w, c)
 	}
 	w.WriteHeader(Code2HTTPCode(r.GetStatusCode()))
 	_, err := w.Write(r.Body)
@@ -41,6 +47,7 @@ func (r *Response) UpdateFromHTTP(v *http.Response, headers ...string) (err erro
 	for _, item := range append(headers, defaultResponseHeaders...) {
 		r.Meta.Set(item, v.Header.Get(item))
 	}
+	r.SetCookie(v.Cookies()...)
 	r.Body, err = Reader(v.Body)
 	if r.GetStatusCode() != StatusCodeOK {
 		switch true {
