@@ -25,13 +25,14 @@ func TestConfig_PoolConfig(t *testing.T) {
 	require.Equal(t, "http", s)
 
 	s, v, err = c.Get("server1").Pool()
-	require.NoError(t, err)
-	require.Equal(t, "127.0.0.1", v)
-	require.Equal(t, "", s)
+	require.Error(t, err)
+	require.EqualError(t, ErrInvalidPoolAddress, err.Error())
 
 	_, _, err = c.Get("server2").Pool()
 	require.Error(t, err)
+	require.EqualError(t, ErrEmptyPool, err.Error())
 
 	_, _, err = c.Get("server3").Pool()
 	require.Error(t, err)
+	require.EqualError(t, ErrEmptyPool, err.Error())
 }

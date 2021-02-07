@@ -49,7 +49,7 @@ func (v List) Pool() (string, string, error) {
 		return "", "", ErrEmptyPool
 	}
 	u, err := url.Parse(v[rand.Intn(len(v))])
-	if err != nil {
+	if err != nil || len(u.Scheme) == 0 || len(u.Host) == 0 {
 		return "", "", ErrInvalidPoolAddress
 	}
 
