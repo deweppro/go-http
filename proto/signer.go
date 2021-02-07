@@ -15,6 +15,7 @@ import (
 )
 
 type (
+	//Signer ...
 	Signer struct {
 		id string
 		h  hash.Hash
@@ -22,10 +23,12 @@ type (
 	}
 )
 
+//NewSigner ...
 func NewSigner(id, secret string) *Signer {
 	return NewCustomSigner(id, secret, sha256.New)
 }
 
+//NewCustomSigner ...
 func NewCustomSigner(id, secret string, h func() hash.Hash) *Signer {
 	return &Signer{
 		id: id,
@@ -33,10 +36,12 @@ func NewCustomSigner(id, secret string, h func() hash.Hash) *Signer {
 	}
 }
 
+//ID ...
 func (s *Signer) ID() string {
 	return s.id
 }
 
+//Create ...
 func (s *Signer) Create(b []byte) []byte {
 	s.l.Lock()
 	defer func() {
@@ -47,10 +52,12 @@ func (s *Signer) Create(b []byte) []byte {
 	return s.h.Sum(nil)
 }
 
+//CreateString ...
 func (s *Signer) CreateString(b []byte) string {
 	return hex.EncodeToString(s.Create(b))
 }
 
+//Validate ...
 func (s *Signer) Validate(b []byte, ex string) bool {
 	return hmac.Equal(s.Create(b), []byte(ex))
 }

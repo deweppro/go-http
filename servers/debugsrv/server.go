@@ -15,22 +15,26 @@ import (
 )
 
 type (
+	//Debug ...
 	Debug struct {
 		srv *httpsrv.Server
 		log logger.Logger
 	}
 )
 
+//New ...
 func New(conf *Config, log logger.Logger) *Debug {
 	return NewCustom(conf.Debug, log)
 }
 
+//NewCustom ...
 func NewCustom(conf httpsrv.ConfigItem, log logger.Logger) *Debug {
 	d := &Debug{log: log}
 	d.srv = httpsrv.NewCustomServer(conf, d, log)
 	return d
 }
 
+//ServeHTTP ...
 func (d *Debug) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/debug/pprof/", "/debug/pprof/goroutine", "/debug/pprof/allocs",
@@ -53,10 +57,12 @@ func (d *Debug) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Up ...
 func (d *Debug) Up() error {
 	return d.srv.Up()
 }
 
+//Down ...
 func (d *Debug) Down() error {
 	return d.srv.Down()
 }

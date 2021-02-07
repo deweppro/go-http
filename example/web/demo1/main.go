@@ -11,14 +11,16 @@ import (
 	"strconv"
 	"time"
 
-	proto "github.com/deweppro/go-http/v2"
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/deweppro/go-http/v2/servers/httpsrv"
 	"github.com/deweppro/go-http/v2/servers/websrv"
 	"github.com/deweppro/go-logger"
 )
 
+//Simple ...
 type Simple struct{}
 
+//Index ...
 func (s *Simple) Index(in *proto.Request, out *proto.Response) {
 	out.SetStatusCode(proto.StatusCodeOK)
 	buf := bytes.Buffer{}

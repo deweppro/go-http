@@ -14,22 +14,26 @@ import (
 )
 
 type (
+	//Request model
 	Request struct {
 		Common
 		URL *url.URL
 	}
 )
 
+//NewRequest make new request
 func NewRequest() *Request {
 	r := &Request{
 		Common: Common{
 			cookies: make(map[string]*http.Cookie),
 			Meta:    make(http.Header),
 		},
+		URL: &url.URL{},
 	}
 	return r
 }
 
+//UpdateFromHTTP ...
 func (r *Request) UpdateFromHTTP(v *http.Request, headers ...string) (err error) {
 	r.URL = v.URL
 	r.Meta = make(http.Header)
@@ -41,6 +45,7 @@ func (r *Request) UpdateFromHTTP(v *http.Request, headers ...string) (err error)
 	return
 }
 
+//GetVersion ...
 func (r *Request) GetVersion() uint64 {
 	d := r.Meta.Get(VersionKey)
 	result := vercomp.FindSubmatch([]byte(d))
@@ -54,6 +59,7 @@ func (r *Request) GetVersion() uint64 {
 	return v
 }
 
+//SetVersion ...
 func (r *Request) SetVersion(v uint64) {
 	r.Meta.Set(VersionKey, fmt.Sprintf(versionValueTmpl, v))
 }

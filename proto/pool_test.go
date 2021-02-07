@@ -14,18 +14,24 @@ import (
 )
 
 func TestConfig_PoolConfig(t *testing.T) {
-	data := `{"services":{"server1":["127.0.0.1"], "server2":[]}}`
+	data := `{"services":{"server0":["http://127.0.0.1"], "server1":["127.0.0.1"], "server2":[]}}`
 
 	c := Pool{}
 	require.NoError(t, json.Unmarshal([]byte(data), &c))
 
-	v, err := c.Get("server1").Pool()
+	s, v, err := c.Get("server0").Pool()
 	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1", v)
+	require.Equal(t, "http", s)
 
-	_, err = c.Get("server2").Pool()
+	s, v, err = c.Get("server1").Pool()
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1", v)
+	require.Equal(t, "", s)
+
+	_, _, err = c.Get("server2").Pool()
 	require.Error(t, err)
 
-	_, err = c.Get("server3").Pool()
+	_, _, err = c.Get("server3").Pool()
 	require.Error(t, err)
 }

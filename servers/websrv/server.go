@@ -9,13 +9,13 @@ package websrv
 import (
 	"net/http"
 
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/deweppro/go-http/v2/servers/httpsrv"
-
-	proto "github.com/deweppro/go-http/v2"
 	"github.com/deweppro/go-logger"
 )
 
 type (
+	//Server ...
 	Server struct {
 		conf *Config
 		srv  *httpsrv.Server
@@ -24,6 +24,7 @@ type (
 	}
 )
 
+//NewServer ...
 func NewServer(c *Config, h *proto.Server, l logger.Logger) *Server {
 	s := &Server{
 		conf: c,
@@ -34,14 +35,17 @@ func NewServer(c *Config, h *proto.Server, l logger.Logger) *Server {
 	return s
 }
 
+//Up ...
 func (s *Server) Up() error {
 	return s.srv.Up()
 }
 
+//Down ...
 func (s *Server) Down() error {
 	return s.srv.Down()
 }
 
+//ServeHTTP ...
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := proto.NewRequest()
 	res := proto.NewResponse()

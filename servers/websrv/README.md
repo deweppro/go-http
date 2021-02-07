@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	proto "github.com/deweppro/go-http/v2"
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/deweppro/go-http/v2/clients/webcli"
 	"github.com/deweppro/go-http/v2/servers/httpsrv"
 	"github.com/deweppro/go-http/v2/servers/websrv"

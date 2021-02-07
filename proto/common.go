@@ -15,6 +15,7 @@ import (
 	"regexp"
 )
 
+//nolint: golint
 const (
 	VersionKey                = `Accept`
 	versionValueRegexp        = `application\/vnd.v(\d+)\+json`
@@ -49,12 +50,13 @@ var (
 )
 
 type (
+	//Common ...
 	Common struct {
 		cookies map[string]*http.Cookie
 		Meta    http.Header
 		Body    []byte
 	}
-
+	//Sign ...
 	Sign struct {
 		ID        string
 		Algorithm string
@@ -62,6 +64,7 @@ type (
 	}
 )
 
+//SetMeta ...
 func (o *Common) SetMeta(m map[string]string) {
 	if m != nil {
 		for k, v := range m {
@@ -70,10 +73,12 @@ func (o *Common) SetMeta(m map[string]string) {
 	}
 }
 
+//CreateSign ...
 func (o *Common) CreateSign(s *Signer) {
 	o.Meta.Set(SignKey, fmt.Sprintf(signValueTmpl, s.ID(), s.CreateString(o.Body)))
 }
 
+//ValidateSign ...
 func (o *Common) ValidateSign(s *Signer) bool {
 	sign, err := o.GetSignature()
 	if err != nil {
@@ -85,6 +90,7 @@ func (o *Common) ValidateSign(s *Signer) bool {
 	return s.Validate(o.Body, sign.Signature)
 }
 
+//GetSignature ...
 func (o *Common) GetSignature() (s Sign, err error) {
 	d := o.Meta.Get(SignKey)
 	r := signcomp.FindSubmatch([]byte(d))
@@ -96,33 +102,40 @@ func (o *Common) GetSignature() (s Sign, err error) {
 	return
 }
 
+//GetUUID ...
 func (o *Common) GetUUID() string {
 	return o.Meta.Get(UUIDKey)
 }
 
+//UpdateUUID ...
 func (o *Common) UpdateUUID() {
 	o.SetUUID(CreateUUID())
 }
 
+//SetUUID ...
 func (o *Common) SetUUID(v string) {
 	o.Meta.Set(UUIDKey, v)
 }
 
+//DecodeJSON ...
 func (o *Common) DecodeJSON(v interface{}) error {
 	return json.Unmarshal(o.Body, v)
 }
 
+//EncodeJSON ...
 func (o *Common) EncodeJSON(v interface{}) (err error) {
 	o.Meta.Set(ContentTypeKey, ContentTypeJSONValue)
 	o.Body, err = json.Marshal(v)
 	return
 }
 
+//DecodeGob ...
 func (o *Common) DecodeGob(v interface{}) error {
 	buf := bytes.NewBuffer(o.Body)
 	return gob.NewDecoder(buf).Decode(v)
 }
 
+//EncodeGob ...
 func (o *Common) EncodeGob(v interface{}) (err error) {
 	o.Meta.Set(ContentTypeKey, ContentTypeBinaryValue)
 	var buf bytes.Buffer
@@ -131,6 +144,7 @@ func (o *Common) EncodeGob(v interface{}) (err error) {
 	return
 }
 
+//GetCookie ...
 func (o *Common) GetCookie(name string) (*http.Cookie, error) {
 	if v, ok := o.cookies[name]; ok {
 		return v, nil
@@ -138,12 +152,14 @@ func (o *Common) GetCookie(name string) (*http.Cookie, error) {
 	return nil, ErrCookieNotFound
 }
 
+//SetCookie ...
 func (o *Common) SetCookie(v ...*http.Cookie) {
 	for _, item := range v {
 		o.cookies[item.Name] = item
 	}
 }
 
+//Code2HTTPCode ...
 func Code2HTTPCode(v uint) int {
 	switch v {
 	case StatusCodeFail:
@@ -165,6 +181,7 @@ func Code2HTTPCode(v uint) int {
 	}
 }
 
+//HTTPCode2Code ...
 func HTTPCode2Code(v int) uint {
 	switch v {
 	case http.StatusBadRequest:

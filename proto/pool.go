@@ -8,17 +8,22 @@ package proto
 
 import (
 	"math/rand"
+	"net/url"
 	"time"
 )
 
 type (
+	//Pool ...
 	Pool struct {
 		Items map[string]List `yaml:"services" json:"services"`
 	}
-	List   []string
+	//List ...
+	List []string
+	//Pooler ...
 	Pooler interface {
-		Pool() (string, error)
+		Pool() (string, string, error)
 	}
+	//Configer ...
 	Configer interface {
 		Get(name string) List
 	}
@@ -28,6 +33,7 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
+//Get ...
 func (c Pool) Get(name string) List {
 	v, ok := c.Items[name]
 	if !ok {
@@ -36,10 +42,16 @@ func (c Pool) Get(name string) List {
 	return v
 }
 
-func (v List) Pool() (string, error) {
+//Pool ...
+func (v List) Pool() (string, string, error) {
 	l := len(v)
 	if l == 0 {
-		return "", ErrEmptyPool
+		return "", "", ErrEmptyPool
 	}
-	return v[rand.Intn(len(v))], nil
+	u, err := url.Parse(v[rand.Intn(len(v))])
+	if err != nil {
+		return "", "", ErrInvalidPoolAddress
+	}
+
+	return u.Scheme, u.Host, nil
 }

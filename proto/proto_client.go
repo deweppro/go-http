@@ -9,13 +9,16 @@ package proto
 import "github.com/pkg/errors"
 
 type (
+	//Client ...
 	Client struct {
 		conf Configer
 		cli  map[string]CliCaller
 	}
+	//CliCaller ...
 	CliCaller func(pool Pooler, in *Request, out *Response) error
 )
 
+//NewClient ...
 func NewClient(conf Configer) *Client {
 	return &Client{
 		conf: conf,
@@ -23,6 +26,7 @@ func NewClient(conf Configer) *Client {
 	}
 }
 
+//Call ...
 func (o *Client) Call(name string, in *Request, out *Response) error {
 	if c, ok := o.cli[name]; ok {
 		return c(o.conf.Get(name), in, out)
@@ -30,6 +34,7 @@ func (o *Client) Call(name string, in *Request, out *Response) error {
 	return errors.Wrap(ErrClientNotFound, name)
 }
 
+//Client ...
 func (o *Client) Client(name string, call CliCaller) {
 	o.cli[name] = call
 }

@@ -15,11 +15,13 @@ import (
 )
 
 type (
+	//Response model
 	Response struct {
 		Common
 	}
 )
 
+//NewResponse make new response
 func NewResponse() *Response {
 	r := &Response{
 		Common: Common{
@@ -30,6 +32,7 @@ func NewResponse() *Response {
 	return r
 }
 
+//WriteToHTTP ...
 func (r *Response) WriteToHTTP(w http.ResponseWriter) error {
 	for key := range r.Meta {
 		w.Header().Set(key, r.Meta.Get(key))
@@ -42,6 +45,7 @@ func (r *Response) WriteToHTTP(w http.ResponseWriter) error {
 	return err
 }
 
+//UpdateFromHTTP ...
 func (r *Response) UpdateFromHTTP(v *http.Response, headers ...string) (err error) {
 	r.Meta = v.Header
 	for _, item := range append(headers, defaultResponseHeaders...) {
@@ -62,6 +66,7 @@ func (r *Response) UpdateFromHTTP(v *http.Response, headers ...string) (err erro
 	return err
 }
 
+//GetStatusCode ...
 func (r *Response) GetStatusCode() uint {
 	code := r.Meta.Get(StatusCodeKey)
 	v, err := strconv.ParseUint(code, 10, 32)
@@ -71,6 +76,7 @@ func (r *Response) GetStatusCode() uint {
 	return uint(v)
 }
 
+//SetStatusCode ...
 func (r *Response) SetStatusCode(v uint) {
 	r.Meta.Set(StatusCodeKey, strconv.FormatUint(uint64(v), 10))
 }
