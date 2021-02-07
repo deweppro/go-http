@@ -14,8 +14,10 @@ import (
 	"github.com/deweppro/go-logger"
 )
 
+//Simple ...
 type Simple struct{}
 
+//ServeHTTP ...
 func (s *Simple) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte("Hello world"))

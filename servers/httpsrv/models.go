@@ -14,9 +14,11 @@ import (
 
 //easyjson:json
 type (
+	//Config ...
 	Config struct {
 		HTTP ConfigItem `yaml:"http" json:"http"`
 	}
+	//ConfigItem ...
 	ConfigItem struct {
 		Addr         string        `yaml:"addr" json:"addr"`
 		ReadTimeout  time.Duration `yaml:"read_timeout" json:"read_timeout"`

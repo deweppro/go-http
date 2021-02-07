@@ -11,20 +11,22 @@ import (
 	"strconv"
 	"time"
 
-	proto "github.com/deweppro/go-http/v2"
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/deweppro/go-http/v2/servers/httpsrv"
 	"github.com/deweppro/go-http/v2/servers/websrv"
 	"github.com/deweppro/go-logger"
 )
 
+//Simple ...
 type Simple struct{}
 
+//Index ...
 func (s *Simple) Index(in *proto.Request, out *proto.Response) {
 	out.SetStatusCode(proto.StatusCodeOK)
 	buf := bytes.Buffer{}
 	buf.WriteString("<html><body><pre>")
 	buf.WriteString("UUID: " + in.GetUUID() + "\n")
-	buf.WriteString("Path: " + in.Path + "\n")
+	buf.WriteString("URL: " + in.URL.String() + "\n")
 	buf.WriteString("Version: " + strconv.FormatUint(uint64(in.GetVersion()), 10) + "\n")
 	buf.WriteString("Meta: " + "\n")
 	for k := range in.Meta {

@@ -14,6 +14,7 @@ import (
 
 //easyjson:json
 type (
+	//Config model
 	Config struct {
 		Debug httpsrv.ConfigItem `yaml:"debug" json:"debug"`
 	}

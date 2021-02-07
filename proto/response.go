@@ -15,32 +15,43 @@ import (
 )
 
 type (
+	//Response model
 	Response struct {
 		Common
 	}
 )
 
+//NewResponse make new response
 func NewResponse() *Response {
 	r := &Response{
-		Common: Common{Meta: make(http.Header)},
+		Common: Common{
+			cookies: make(map[string]*http.Cookie),
+			Meta:    make(http.Header),
+		},
 	}
 	return r
 }
 
+//WriteToHTTP ...
 func (r *Response) WriteToHTTP(w http.ResponseWriter) error {
 	for key := range r.Meta {
 		w.Header().Set(key, r.Meta.Get(key))
+	}
+	for _, c := range r.cookies {
+		http.SetCookie(w, c)
 	}
 	w.WriteHeader(Code2HTTPCode(r.GetStatusCode()))
 	_, err := w.Write(r.Body)
 	return err
 }
 
+//UpdateFromHTTP ...
 func (r *Response) UpdateFromHTTP(v *http.Response, headers ...string) (err error) {
 	r.Meta = v.Header
 	for _, item := range append(headers, defaultResponseHeaders...) {
 		r.Meta.Set(item, v.Header.Get(item))
 	}
+	r.SetCookie(v.Cookies()...)
 	r.Body, err = Reader(v.Body)
 	if r.GetStatusCode() != StatusCodeOK {
 		switch true {
@@ -55,6 +66,7 @@ func (r *Response) UpdateFromHTTP(v *http.Response, headers ...string) (err erro
 	return err
 }
 
+//GetStatusCode ...
 func (r *Response) GetStatusCode() uint {
 	code := r.Meta.Get(StatusCodeKey)
 	v, err := strconv.ParseUint(code, 10, 32)
@@ -64,6 +76,7 @@ func (r *Response) GetStatusCode() uint {
 	return uint(v)
 }
 
+//SetStatusCode ...
 func (r *Response) SetStatusCode(v uint) {
 	r.Meta.Set(StatusCodeKey, strconv.FormatUint(uint64(v), 10))
 }

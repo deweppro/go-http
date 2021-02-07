@@ -11,23 +11,27 @@ import (
 	"os"
 	"time"
 
-	proto "github.com/deweppro/go-http/v2"
 	"github.com/deweppro/go-http/v2/clients/webcli"
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/deweppro/go-http/v2/servers/httpsrv"
 	"github.com/deweppro/go-http/v2/servers/websrv"
 	"github.com/deweppro/go-logger"
 )
 
+//A ...
 type A struct {
 	Name string `json:"name"`
 }
 
+//B ...
 type B struct {
 	Name string `json:"name"`
 }
 
+//Demo ...
 type Demo struct{}
 
+//Index ...
 func (s *Demo) Index(in *proto.Request, out *proto.Response) {
 	var model B
 	if err := in.DecodeJSON(&model); err != nil {

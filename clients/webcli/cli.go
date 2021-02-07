@@ -12,14 +12,14 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
-	proto "github.com/deweppro/go-http/v2"
+	"github.com/deweppro/go-http/v2/proto"
 	"github.com/pkg/errors"
 )
 
 type (
+	//Client ...
 	Client struct {
 		cli     *http.Client
 		headers http.Header
@@ -28,6 +28,7 @@ type (
 	}
 )
 
+//NewClient ...
 func NewClient() *Client {
 	cli := &http.Client{
 		Transport: &http.Transport{
@@ -44,6 +45,7 @@ func NewClient() *Client {
 	return NewCustomClient(cli)
 }
 
+//NewCustomClient ...
 func NewCustomClient(cli *http.Client) *Client {
 	return &Client{
 		cli:     cli,
@@ -56,17 +58,19 @@ func (v *Client) Debug(is bool, w io.Writer) {
 	v.debug, v.writer = is, w
 }
 
+//WithHeaders ...
 func (v *Client) WithHeaders(heads http.Header) {
 	v.headers = heads
 }
 
 //Call make request to server
 func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response) error {
-	add, err := pool.Pool()
+	scheme, addr, err := pool.Pool()
 	if err != nil {
 		return errors.Wrap(err, "get address from pool")
 	}
-	req, err := http.NewRequest(http.MethodPost, add+"/"+strings.TrimLeft(in.Path, "/"), bytes.NewReader(in.Body))
+	in.URL.Scheme, in.URL.Host = scheme, addr
+	req, err := http.NewRequest(http.MethodPost, in.URL.String(), bytes.NewReader(in.Body))
 	if err != nil {
 		return errors.Wrap(err, "create request")
 	}
@@ -92,7 +96,7 @@ func (v *Client) Call(pool proto.Pooler, in *proto.Request, out *proto.Response)
 		fmt.Fprintf(
 			v.writer,
 			"code<%d> path<%s> ver<%d> uuid<%s> sign<%s> in<%s> out<%s> err<%+v>\n",
-			out.GetStatusCode(), in.Path, in.GetVersion(), in.GetUUID(),
+			out.GetStatusCode(), in.URL.String(), in.GetVersion(), in.GetUUID(),
 			in.Meta.Get(proto.SignKey), in.Body, out.Body, err,
 		)
 	}
