@@ -6,3 +6,5 @@
 [![Build Status](https://travis-ci.com/deweppro/go-http.svg?branch=main)](https://travis-ci.com/deweppro/go-http)
 
 # How to use it
+
+see [example](examples)
