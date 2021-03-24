@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"sync"
@@ -14,9 +15,10 @@ import (
 )
 
 const (
-	defaultTimeOut = 10 * time.Second
-	StatusOn       = 1
-	StatusOff      = 0
+	defaultTimeOut   = 10 * time.Second
+	defaultGSTimeOut = 1 * time.Second
+	StatusOn         = 1
+	StatusOff        = 0
 )
 
 type (
@@ -57,6 +59,9 @@ func (s *Server) validate() {
 	}
 	if s.config.IdleTimeout == 0 {
 		s.config.IdleTimeout = defaultTimeOut
+	}
+	if s.config.ShutdownTimeout == 0 {
+		s.config.ShutdownTimeout = defaultGSTimeOut
 	}
 	hp := strings.Split(s.config.Addr, ":")
 	if len(hp[0]) == 0 {
@@ -105,7 +110,9 @@ func (s *Server) Down() error {
 	if !atomic.CompareAndSwapInt64(&s.status, StatusOn, StatusOff) {
 		return ErrServAlreadyStopped
 	}
-	err := s.server.Close()
+	ctx, cncl := context.WithTimeout(context.TODO(), s.config.ShutdownTimeout)
+	defer cncl()
+	err := s.server.Shutdown(ctx)
 	s.wg.Wait()
 	return err
 }

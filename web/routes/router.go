@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+var _ http.Handler = (*Router)(nil)
+
 //Router model
 type Router struct {
 	middlewares []MiddlFunc

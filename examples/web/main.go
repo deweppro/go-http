@@ -44,7 +44,7 @@ func main() {
 		panic(err)
 	}
 
-	<-time.After(60 * time.Second)
+	<-time.After(3 * time.Second)
 
 	if err := serv.Down(); err != nil {
 		panic(err)
