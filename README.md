@@ -7,8 +7,6 @@
 
 ## Install
 
-With a [correctly configured](https://golang.org/doc/install#testing) Go toolchain:
-
 ```sh
 go get -u github.com/deweppro/go-http
 ```
