@@ -5,9 +5,12 @@ import (
 	"io"
 
 	cpool "github.com/deweppro/go-chan-pool"
+	"github.com/pkg/errors"
 )
 
 var (
+	ErrInvalidPoolType = errors.New("invalid data type from pool")
+
 	pool = cpool.ChanPool{
 		Size: eventCount,
 		New: func() interface{} {
@@ -27,7 +30,10 @@ func connection(conn io.ReadWriter, handler ConnectionHandler, eof []byte) error
 		err error
 		l   = len(eof)
 	)
-	b := pool.Get().([]byte)
+	b, ok := pool.Get().([]byte)
+	if !ok {
+		return ErrInvalidPoolType
+	}
 	defer pool.Put(b[:0])
 
 	for {
@@ -38,7 +44,6 @@ func connection(conn io.ReadWriter, handler ConnectionHandler, eof []byte) error
 		b = b[:len(b)+n]
 		if err != nil {
 			if err == io.EOF {
-				err = nil
 				break
 			}
 			return err

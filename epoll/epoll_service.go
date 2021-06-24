@@ -144,7 +144,7 @@ func (s *Server) epollAccept() {
 					defer conn.Await(false)
 
 					if err1 := connection(conn.Conn, s.handler, s.eof); err1 != nil {
-						_ = s.epoll.Close(conn)
+						s.epoll.Close(conn) //nolint: errcheck
 						if err1 != io.EOF {
 							s.log.Errorf("epoll bad conn %s: %s", conn.Conn.RemoteAddr().String(), err1.Error())
 						}

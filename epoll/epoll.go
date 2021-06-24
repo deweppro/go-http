@@ -119,7 +119,7 @@ func (e *Epoll) Wait() (NetSlice, error) {
 		fd := int(e.events[i].Fd)
 		conn, ok := e.getConn(fd)
 		if !ok {
-			_ = e.removeFD(fd)
+			e.removeFD(fd) //nolint: errcheck
 			continue
 		}
 		if conn.IsAwait() {

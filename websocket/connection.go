@@ -101,7 +101,7 @@ func (c *Conn) pumpWrite() {
 	for {
 		select {
 		case <-c.ctx.Done():
-			_ = c.conn.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, "Bye"))
+			c.conn.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, "Bye")) //nolint: errcheck
 			return
 		case msg := <-c.sendChan:
 			if err := c.conn.WriteMessage(ws.TextMessage, msg); err != nil {
@@ -136,8 +136,8 @@ func (c *Conn) Upgrade(w http.ResponseWriter, r *http.Request, handler Handler) 
 
 	c.handler = handler
 	c.headers = r.Header
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))                                                           //nolint: errcheck
+	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil }) //nolint: errcheck
 
 	go c.pumpWrite()
 	go c.pumpRead()

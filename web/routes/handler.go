@@ -55,9 +55,7 @@ func (h *Handler) Middlewares(uris []string, pos int, middlewares []MiddlFunc) {
 		h.list[uri] = uh
 	}
 	if pos == len(uris)-1 {
-		for _, m := range middlewares {
-			uh.middlewares = append(uh.middlewares, m)
-		}
+		uh.middlewares = append(uh.middlewares, middlewares...)
 		return
 	}
 	uh.Middlewares(uris, pos+1, middlewares)

@@ -88,7 +88,7 @@ func (v *Client) Call(pool utils.Pooler, method, uri string, body []byte) (int, 
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "make request")
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint: errcheck
 	b, err := ioutil.ReadAll(resp.Body)
 	return resp.StatusCode, b, err
 }
