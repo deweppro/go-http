@@ -45,6 +45,9 @@ func (o *Router) Middlewares(prefix string, middlewares ...MiddlFunc) {
 
 //ServeHTTP http interface
 func (o *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	o.lock.RLock()
+	defer o.lock.RUnlock()
+
 	next := o.match()
 	for i := len(o.middlewares) - 1; i >= 0; i-- {
 		next = o.middlewares[i](next)
@@ -54,8 +57,6 @@ func (o *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (o *Router) match() CtrlFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		o.lock.RLock()
-		defer o.lock.RUnlock()
 		code, ctrl, mids := o.handlers.Match(SplitURI(r.RequestURI), 0, r.Method)
 		if code != http.StatusOK {
 			w.WriteHeader(code)
