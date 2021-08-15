@@ -74,7 +74,7 @@ route.Global(
     // default: Setting up for сross-origin resource sharing (CORS)
     routes.CORSMiddleware(routes.CORSConfig{
         Age:     100,
-        Origin:  "localhost",
+        Origin:  []string{"localhost"},
         Methods: []string{http.MethodGet, http.MethodPost},
         Headers: []string{"X-Token"},
     }),
@@ -160,7 +160,7 @@ func main() {
 		routes.ThrottlingMiddleware(1000),
 		routes.CORSMiddleware(routes.CORSConfig{
 			Age:     100,
-			Origin:  "localhost",
+			Origin:  []{"localhost"},
 			Methods: []string{http.MethodGet, http.MethodPost},
 			Headers: []string{"X-Token"},
 		}),
