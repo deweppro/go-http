@@ -57,7 +57,7 @@ func (o *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (o *Router) match() CtrlFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		code, ctrl, mids := o.handlers.Match(SplitURI(r.RequestURI), 0, r.Method)
+		code, ctrl, mids := o.handlers.Match(SplitURI(r.URL.Path), 0, r.Method)
 		if code != http.StatusOK {
 			w.WriteHeader(code)
 			return

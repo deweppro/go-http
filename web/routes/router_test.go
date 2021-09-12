@@ -2,13 +2,14 @@ package routes_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/deweppro/go-http/web/routes"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnit_Route(t *testing.T) {
+func TestUnit_Route1(t *testing.T) {
 	result := new(string)
 	r := routes.NewRouter()
 	r.Global(func(c routes.CtrlFunc) routes.CtrlFunc {
@@ -46,6 +47,31 @@ func TestUnit_Route(t *testing.T) {
 	})
 	r.ServeHTTP(nil, &http.Request{Method: "GET", RequestURI: "/"})
 	require.Equal(t, "1235Ctrl", *result)
+}
+
+func TestUnit_Route2(t *testing.T) {
+	r := routes.NewRouter()
+	r.Route("/aaa", func(w http.ResponseWriter, r *http.Request) {}, http.MethodGet)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/aaa/bbb/ccc/eee/ggg/fff/kkk", nil)
+	r.ServeHTTP(w, req)
+	require.Equal(t, 404, w.Result().StatusCode)
+
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/aaa/", nil)
+	r.ServeHTTP(w, req)
+	require.Equal(t, 200, w.Result().StatusCode)
+
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/aaa", nil)
+	r.ServeHTTP(w, req)
+	require.Equal(t, 200, w.Result().StatusCode)
+
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/aaa?a=1", nil)
+	r.ServeHTTP(w, req)
+	require.Equal(t, 200, w.Result().StatusCode)
 }
 
 func BenchmarkRouter(b *testing.B) {
