@@ -45,7 +45,9 @@ func TestUnit_Route1(t *testing.T) {
 			c(w, r)
 		}
 	})
-	r.ServeHTTP(nil, &http.Request{Method: "GET", RequestURI: "/"})
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
 	require.Equal(t, "1235Ctrl", *result)
 }
 
