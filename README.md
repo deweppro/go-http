@@ -20,13 +20,17 @@ see more [here](examples)
 You can add http server with routes to receive data from pprof:
 
 ```go
-import "github.com/deweppro/go-http/web/debug"
+import (
+	"github.com/deweppro/go-http/servers"
+	"github.com/deweppro/go-http/servers/debug"
+	"github.com/deweppro/go-logger"
+)
 // use the configuration, and specify a host with a port 
 // (example: localhost:8090, :8090 for bind 0.0.0.0:8090), 
 // or specify only a host (example: localhost) to get a random port.
-conf:= &debug.Config{Debug: server.ConfigItem{Addr: ":8090"}}
+conf := servers.Config{Addr: ":8080"}
 // сreate object and pass the config and logger to it.
-serv := debug.New(conf, logger)
+serv := debug.New(conf, logger.Default())
 serv.Up() // сall to start the server.
 serv.Down() //  сall to stop the server.
 ```
@@ -36,7 +40,7 @@ serv.Down() //  сall to stop the server.
 Create instance (it match to the interface `http.Handler`)
 
 ```go
-import "github.com/deweppro/go-http/web/routes"
+import "github.com/deweppro/go-http/pkg/routes"
 
 route := routes.NewRouter()
 ```
@@ -49,6 +53,8 @@ route.Route(<URL>, <Handler>, <Methods>...)
 // example:
 route.Route("/", IndexHandler, http.MethodGet) // only GET
 route.Route("/page", PageHandler, http.MethodGet, http.MethodPost) // GET + POST
+route.Route("/page-{id}", PageHandler, http.MethodGet, http.MethodPost) // GET + POST
+route.Route("/page-{id:\d+}", PageHandler, http.MethodGet, http.MethodPost) // GET + POST
 ```
 
 handler must match the interface: `CtrlFunc: func(http.ResponseWriter,*http.Request)`
@@ -95,8 +101,8 @@ route.Middlewares(<URL PREFIX>, <Middleware>...)
 
 // examples
 // we have added several URL paths
-route.Route("/pages/book/book-1", BookHandler, http.MethodGet)
-route.Route("/pages/book/book-2", BookHandler, http.MethodGet)
+route.Route("/pages/book/book-{id:\d+}", BookHandler, http.MethodGet)
+route.Route("/pages/book/book-{title:[a-z]+}", BookHandler, http.MethodGet)
 route.Route("/pages/book/list/all", ListBookHandler, http.MethodGet)
 // and we want that when calling any page starting 
 // from /pages/book level, the necessary middlewares are executed
@@ -110,16 +116,20 @@ route.Middlewares("/pages/book",
 )
 ```
 
-### http server
+### Web server
 
-You can add http server:
+You can add web server:
 
 ```go
-import "github.com/deweppro/go-http/web/server"
+import (
+    "github.com/deweppro/go-http/servers"
+    "github.com/deweppro/go-http/servers/web"
+)
+
 // use the configuration, and specify a host with a port 
 // (example: localhost:8080, :8080 for bind 0.0.0.0:8080), 
 // or specify only a host (example: localhost) to get a random port.
-conf := &server.Config{HTTP: server.ConfigItem{Addr: ":8080"}}
+conf := servers.Config{Addr: ":8080"}
 // сreate object and pass the config, handler and logger to it.
 // handler must match the interface - http.Handler
 serv := server.New(conf, handler, logger)
@@ -136,21 +146,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deweppro/go-http/web/routes"
-	"github.com/deweppro/go-http/web/server"
+	"github.com/deweppro/go-http/pkg/httputil/enc"
+	"github.com/deweppro/go-http/pkg/routes"
+	"github.com/deweppro/go-http/servers"
+	"github.com/deweppro/go-http/servers/web"
 	"github.com/deweppro/go-logger"
 )
 
 func main() {
-	conf := &server.Config{HTTP: server.ConfigItem{Addr: ":8080"}}
+	conf := servers.Config{Addr: ":8080"}
 	route := routes.NewRouter()
-	serv := server.New(conf, route, logger.Default())
+	serv := web.New(conf, route, logger.Default())
 
 	route.Route("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello"))
+		enc.Raw(w, []byte("Hello"))
 	}, http.MethodGet, http.MethodPost)
-
+	
 	route.Route("/panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("*")
 	}, http.MethodGet, http.MethodPost)
@@ -160,7 +171,7 @@ func main() {
 		routes.ThrottlingMiddleware(1000),
 		routes.CORSMiddleware(routes.CORSConfig{
 			Age:     100,
-			Origin:  []{"localhost"},
+			Origin:  []string{"localhost"},
 			Methods: []string{http.MethodGet, http.MethodPost},
 			Headers: []string{"X-Token"},
 		}),
