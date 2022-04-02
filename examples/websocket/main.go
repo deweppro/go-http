@@ -3,14 +3,17 @@ package main
 import (
 	"time"
 
-	"github.com/deweppro/go-http/web/server"
-	"github.com/deweppro/go-http/websocket"
+	"github.com/deweppro/go-http/servers"
+	"github.com/deweppro/go-http/servers/web"
+	"github.com/deweppro/go-http/servers/websocket"
 	"github.com/deweppro/go-logger"
 )
 
 func main() {
-	hub := websocket.NewHub(handler)
-	serv := server.NewCustom(server.ConfigItem{Addr: ":8080"}, hub, logger.Default())
+	logger.Default().SetLevel(logger.LevelDebug)
+
+	hub := websocket.New(handler, logger.Default())
+	serv := web.New(servers.Config{Addr: ":8080"}, hub, logger.Default())
 
 	if err := hub.Up(); err != nil {
 		panic(err)
@@ -19,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	<-time.After(60 * time.Minute)
+	<-time.After(60 * time.Second)
 
 	if err := serv.Down(); err != nil {
 		panic(err)
