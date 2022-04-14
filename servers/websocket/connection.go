@@ -93,17 +93,23 @@ func (v *connection) pumpWrite() {
 		case <-v.ctx.Done():
 			msg := ws.FormatCloseMessage(ws.CloseNormalClosure, "Bye")
 			if err := v.conn.WriteMessage(ws.CloseMessage, msg); err != nil {
-				v.log.Errorf("close conn for `%s`: %s", v.UUID(), err.Error())
+				v.log.WithFields(logger.Fields{
+					"err": err.Error(), "uuid": v.UUID(),
+				}).Errorf("close conn")
 			}
 			return
 		case msg := <-v.sendChan:
 			if err := v.conn.WriteMessage(ws.TextMessage, msg); err != nil {
-				v.log.Errorf("send message for `%s`: %s", v.UUID(), err.Error())
+				v.log.WithFields(logger.Fields{
+					"err": err.Error(), "uuid": v.UUID(),
+				}).Errorf("send message")
 				return
 			}
 		case <-ticker.C:
 			if err := v.conn.WriteMessage(ws.PingMessage, nil); err != nil {
-				v.log.Errorf("send ping for `%s`: %s", v.UUID(), err.Error())
+				v.log.WithFields(logger.Fields{
+					"err": err.Error(), "uuid": v.UUID(),
+				}).Errorf("send ping")
 				return
 			}
 		}
@@ -115,7 +121,9 @@ func (v *connection) pumpRead() {
 	for {
 		_, message, err := v.conn.ReadMessage()
 		if err != nil {
-			v.log.Errorf("read message for `%s`: %s", v.UUID(), err.Error())
+			v.log.WithFields(logger.Fields{
+				"err": err.Error(), "uuid": v.UUID(),
+			}).Errorf("read message")
 			return
 		}
 		v.handler(message, v)

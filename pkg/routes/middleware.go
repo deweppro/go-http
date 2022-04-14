@@ -84,7 +84,7 @@ func RecoveryMiddleware(log logger.Logger) func(c CtrlFunc) CtrlFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Errorf("Recovered: %+v", err)
+					log.WithFields(logger.Fields{"err": err}).Errorf("recovered")
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 			}()

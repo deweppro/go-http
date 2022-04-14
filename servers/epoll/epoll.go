@@ -118,7 +118,9 @@ func (v *Epoll) Wait() (NetSlice, error) {
 		conn, ok := v.getConn(fd)
 		if !ok {
 			if err = v.removeFD(fd); err != nil {
-				v.log.Errorf("close fd[%d]: %s", fd, err.Error())
+				v.log.WithFields(logger.Fields{
+					"err": err.Error(), "fd": fd,
+				}).Errorf("close fd")
 			}
 			continue
 		}
@@ -132,7 +134,7 @@ func (v *Epoll) Wait() (NetSlice, error) {
 			v.nets = append(v.nets, conn)
 		default:
 			if err = v.Close(conn); err != nil {
-				v.log.Errorf("epoll close connect: %s", err.Error())
+				v.log.WithFields(logger.Fields{"err": err.Error()}).Errorf("epoll close connect")
 			}
 		}
 	}

@@ -77,7 +77,9 @@ func (v *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := conn.Upgrade(w, r, v.call); err == nil {
 		v.Add(conn)
 	} else {
-		v.log.Errorf("upgrade for `%s`: %s", conn.UUID(), err.Error())
+		v.log.WithFields(logger.Fields{
+			"err": err.Error(), "uuid": conn.UUID(),
+		}).Errorf("connection upgrade")
 	}
 }
 
