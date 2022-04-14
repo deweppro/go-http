@@ -71,14 +71,18 @@ func (s *Server) Up() error {
 	}
 
 	s.wg.Add(1)
-	s.log.Infof("http server started on %s", s.conf.Addr)
+	s.log.WithFields(logger.Fields{"ip": s.conf.Addr}).Infof("http server started")
 
 	go func() {
 		err := s.serv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			s.log.Errorf("http server stopped on %s with error: %s", s.conf.Addr, err.Error())
+			s.log.WithFields(logger.Fields{
+				"err": err.Error(), "ip": s.conf.Addr,
+			}).Errorf("http server stopped")
 		} else {
-			s.log.Infof("http server stopped on %s", s.conf.Addr)
+			s.log.WithFields(logger.Fields{
+				"ip": s.conf.Addr,
+			}).Infof("http server stopped")
 		}
 		s.wg.Done()
 	}()

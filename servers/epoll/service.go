@@ -62,7 +62,7 @@ func (s *Server) Up() (err error) {
 	if s.epoll, err = newEpoll(s.log); err != nil {
 		return
 	}
-	s.log.Infof("tcp server started on %s", s.conf.Addr)
+	s.log.WithFields(logger.Fields{"ip": s.conf.Addr}).Infof("tcp server started")
 	s.wg.Add(2)
 	go s.connAccept()
 	go s.epollAccept()
@@ -74,7 +74,7 @@ func (s *Server) Down() error {
 	close(s.close)
 	err := errors.Wrap(s.epoll.CloseAll(), s.listener.Close())
 	s.wg.Wait()
-	s.log.Infof("tcp server stopped on %s", s.conf.Addr)
+	s.log.WithFields(logger.Fields{"ip": s.conf.Addr}).Infof("tcp server stopped")
 	return err
 }
 
@@ -89,7 +89,7 @@ func (s *Server) connAccept() {
 			case <-s.close:
 				return
 			default:
-				s.log.Errorf("epoll conn accept: %s", err.Error())
+				s.log.WithFields(logger.Fields{"err": err.Error()}).Errorf("epoll conn accept")
 				if err0, ok := err.(net.Error); ok && err0.Temporary() {
 					time.Sleep(1 * time.Second)
 					continue
@@ -98,7 +98,9 @@ func (s *Server) connAccept() {
 			}
 		}
 		if err = s.epoll.AddOrClose(conn); err != nil {
-			s.log.Errorf("epoll add conn: %s", err.Error())
+			s.log.WithFields(logger.Fields{
+				"err": err.Error(), "ip": conn.RemoteAddr().String(),
+			}).Errorf("epoll add conn")
 		}
 	}
 }
@@ -120,7 +122,7 @@ func (s *Server) epollAccept() {
 			case unix.EINTR:
 				continue
 			default:
-				s.log.Errorf("epoll accept conn: %s", err.Error())
+				s.log.WithFields(logger.Fields{"err": err.Error()}).Errorf("epoll accept conn")
 				continue
 			}
 
@@ -130,10 +132,14 @@ func (s *Server) epollAccept() {
 
 					if err1 := newConnection(conn.Conn, s.handler, s.eof); err1 != nil {
 						if err2 := s.epoll.Close(conn); err2 != nil {
-							s.log.Errorf("epoll close conn %s: %s", conn.Conn.RemoteAddr().String(), err2.Error())
+							s.log.WithFields(logger.Fields{
+								"err": err2.Error(), "ip": conn.Conn.RemoteAddr().String(),
+							}).Errorf("epoll add conn")
 						}
 						if err1 != io.EOF {
-							s.log.Errorf("epoll bad conn %s: %s", conn.Conn.RemoteAddr().String(), err1.Error())
+							s.log.WithFields(logger.Fields{
+								"err": err1.Error(), "ip": conn.Conn.RemoteAddr().String(),
+							}).Errorf("epoll bad conn")
 						}
 					}
 				}(c)
