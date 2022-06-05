@@ -47,3 +47,17 @@ func TestUnit_NewHandler(t *testing.T) {
 	require.Equal(t, 1, len(midd))
 	require.Equal(t, internal.VarsData{}, vars)
 }
+
+func TestUnit_NewHandler2(t *testing.T) {
+	h := newHandler()
+	h.Route("/api/v1/data", func(_ http.ResponseWriter, _ *http.Request) {}, []string{http.MethodGet})
+
+	h.Middlewares("/api/v1", ThrottlingMiddleware(0))
+
+	code, ctrl, vars, midd := h.Match("/api/v1/data", http.MethodGet)
+	require.Equal(t, http.StatusOK, code)
+	require.NotNil(t, ctrl)
+	require.Equal(t, 1, len(midd))
+	require.Equal(t, internal.VarsData{}, vars)
+
+}

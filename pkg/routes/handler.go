@@ -54,7 +54,7 @@ func (v *handler) next(path string, vars internal.VarsData) *handler {
 //Route add new route
 func (v *handler) Route(path string, ctrl CtrlFunc, methods []string) {
 	uris := split(path)
-	var uh = v
+	uh := v
 	for _, uri := range uris {
 		if hasMatcher(uri) {
 			if err := uh.matcher.Add(uri); err != nil {
@@ -71,17 +71,16 @@ func (v *handler) Route(path string, ctrl CtrlFunc, methods []string) {
 //Middlewares add middleware to route
 func (v *handler) Middlewares(path string, middlewares ...MiddlFunc) {
 	uris := split(path)
-	var uh = v
+	uh := v
 	for _, uri := range uris {
-		uh = v.append(uri)
+		uh = uh.append(uri)
 	}
 	uh.middlewares = append(uh.middlewares, middlewares...)
 }
 
 //Match find route in tree
 func (v *handler) Match(path string, method string) (int, CtrlFunc, internal.VarsData, []MiddlFunc) {
-	var uh = v
-
+	uh := v
 	uris := split(path)
 	midd := append(make([]MiddlFunc, 0), uh.middlewares...)
 	vars := internal.VarsData{}
@@ -96,6 +95,9 @@ func (v *handler) Match(path string, method string) (int, CtrlFunc, internal.Var
 
 	ctrl, ok := uh.methods[method]
 	if !ok {
+		if len(uh.methods) == 0 {
+			return http.StatusNotFound, nil, nil, nil
+		}
 		return http.StatusMethodNotAllowed, nil, nil, nil
 	}
 
