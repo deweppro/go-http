@@ -26,7 +26,7 @@ func TestUnit_NewHandler(t *testing.T) {
 	code, ctrl, vars, midd = h.Match("/aaa/ccc", http.MethodGet)
 	require.Equal(t, http.StatusMethodNotAllowed, code)
 	require.Nil(t, ctrl)
-	require.Equal(t, 0, len(midd))
+	require.Equal(t, 1, len(midd))
 	require.Equal(t, internal.VarsData(nil), vars)
 
 	code, ctrl, vars, midd = h.Match("/aaa/bbb", http.MethodPost)
@@ -35,17 +35,33 @@ func TestUnit_NewHandler(t *testing.T) {
 	require.Equal(t, 2, len(midd))
 	require.Equal(t, internal.VarsData{"id": "bbb"}, vars)
 
-	code, ctrl, vars, midd = h.Match("/test", http.MethodGet)
-	require.Equal(t, http.StatusNotFound, code)
-	require.Nil(t, ctrl)
-	require.Equal(t, 0, len(midd))
-	require.Equal(t, internal.VarsData(nil), vars)
-
 	code, ctrl, vars, midd = h.Match("", http.MethodPost)
 	require.Equal(t, http.StatusOK, code)
 	require.NotNil(t, ctrl)
 	require.Equal(t, 1, len(midd))
 	require.Equal(t, internal.VarsData{}, vars)
+
+	h.Middlewares("/www/www/www", ThrottlingMiddleware(0))
+
+	code, ctrl, vars, midd = h.Match("/www/www/www", http.MethodPost)
+	require.Equal(t, http.StatusNotFound, code)
+	require.Nil(t, ctrl)
+	require.Equal(t, 1, len(midd))
+	require.Equal(t, internal.VarsData(nil), vars)
+
+	code, ctrl, vars, midd = h.Match("/test", http.MethodGet)
+	require.Equal(t, http.StatusNotFound, code)
+	require.Nil(t, ctrl)
+	require.Equal(t, 1, len(midd))
+	require.Equal(t, internal.VarsData(nil), vars)
+
+	h.NoFoundHandler(func(_ http.ResponseWriter, _ *http.Request) {})
+
+	code, ctrl, vars, midd = h.Match("/test", http.MethodGet)
+	require.Equal(t, http.StatusOK, code)
+	require.NotNil(t, ctrl)
+	require.Equal(t, 1, len(midd))
+	require.Equal(t, internal.VarsData(nil), vars)
 }
 
 func TestUnit_NewHandler2(t *testing.T) {

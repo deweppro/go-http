@@ -44,15 +44,21 @@ func (v *Router) Middlewares(path string, middlewares ...MiddlFunc) {
 	v.lock.Unlock()
 }
 
+//NoFoundHandler handler call if route not found
+func (v *Router) NoFoundHandler(call CtrlFunc) {
+	v.lock.Lock()
+	v.handler.NoFoundHandler(call)
+	v.lock.Unlock()
+}
+
 //ServeHTTP http interface
 func (v *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v.lock.RLock()
 	defer v.lock.RUnlock()
 
-	code, ctrl, vars, midd := v.handler.Match(r.URL.Path, r.Method)
+	code, next, vars, midd := v.handler.Match(r.URL.Path, r.Method)
 	if code != http.StatusOK {
-		w.WriteHeader(code)
-		return
+		next = codeHandler(code)
 	}
 
 	ctx := r.Context()
@@ -60,9 +66,14 @@ func (v *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx = context.WithValue(ctx, internal.VarsKey(key), val)
 	}
 
-	next := ctrl
 	for i := len(midd) - 1; i >= 0; i-- {
 		next = midd[i](next)
 	}
 	next(w, r.WithContext(ctx))
+}
+
+func codeHandler(code int) CtrlFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(code)
+	}
 }
