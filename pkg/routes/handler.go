@@ -16,6 +16,7 @@ type handler struct {
 	methods     map[string]CtrlFunc
 	matcher     *matcher
 	middlewares []MiddlFunc
+	notFound    CtrlFunc
 }
 
 //newHandler getting new handler
@@ -53,8 +54,8 @@ func (v *handler) next(path string, vars internal.VarsData) *handler {
 
 //Route add new route
 func (v *handler) Route(path string, ctrl CtrlFunc, methods []string) {
-	uris := split(path)
 	uh := v
+	uris := split(path)
 	for _, uri := range uris {
 		if hasMatcher(uri) {
 			if err := uh.matcher.Add(uri); err != nil {
@@ -70,36 +71,42 @@ func (v *handler) Route(path string, ctrl CtrlFunc, methods []string) {
 
 //Middlewares add middleware to route
 func (v *handler) Middlewares(path string, middlewares ...MiddlFunc) {
-	uris := split(path)
 	uh := v
+	uris := split(path)
 	for _, uri := range uris {
 		uh = uh.append(uri)
 	}
 	uh.middlewares = append(uh.middlewares, middlewares...)
 }
 
+func (v *handler) NoFoundHandler(call CtrlFunc) {
+	v.notFound = call
+}
+
 //Match find route in tree
 func (v *handler) Match(path string, method string) (int, CtrlFunc, internal.VarsData, []MiddlFunc) {
 	uh := v
 	uris := split(path)
-	midd := append(make([]MiddlFunc, 0), uh.middlewares...)
+	midd := append(make([]MiddlFunc, 0, len(uh.middlewares)), uh.middlewares...)
 	vars := internal.VarsData{}
-
 	for _, uri := range uris {
-		uh = uh.next(uri, vars)
-		if uh == nil {
-			return http.StatusNotFound, nil, nil, nil
+		if uh = uh.next(uri, vars); uh != nil {
+			midd = append(midd, uh.middlewares...)
+			continue
 		}
-		midd = append(midd, uh.middlewares...)
-	}
-
-	ctrl, ok := uh.methods[method]
-	if !ok {
-		if len(uh.methods) == 0 {
-			return http.StatusNotFound, nil, nil, nil
+		if v.notFound != nil {
+			return http.StatusOK, v.notFound, nil, midd
 		}
-		return http.StatusMethodNotAllowed, nil, nil, nil
+		return http.StatusNotFound, nil, nil, v.middlewares
 	}
-
-	return http.StatusOK, ctrl, vars, midd
+	if ctrl, ok := uh.methods[method]; ok {
+		return http.StatusOK, ctrl, vars, midd
+	}
+	if v.notFound != nil {
+		return http.StatusOK, v.notFound, nil, midd
+	}
+	if len(uh.methods) == 0 {
+		return http.StatusNotFound, nil, nil, v.middlewares
+	}
+	return http.StatusMethodNotAllowed, nil, nil, v.middlewares
 }

@@ -76,24 +76,62 @@ func TestUnit_Route2(t *testing.T) {
 	require.Equal(t, 200, w.Result().StatusCode)
 }
 
-func BenchmarkRouter(b *testing.B) {
-	b.ReportAllocs()
+func mockNilHandler(_ http.ResponseWriter, _ *http.Request) {}
 
+func BenchmarkRouter0(b *testing.B) {
 	serv := routes.NewRouter()
-	serv.Route("/{id0}/{id1}/{id2}/{id3}/{id4}/{id5}/{id6}", func(w http.ResponseWriter, r *http.Request) {}, http.MethodGet)
-	r := httptest.NewRequest("GET", "/aaa/bbb/ccc/eee/ggg/fff/kkk", nil)
+	serv.Route(`/aaa/bbb/ccc/eee/ggg/fff/kkk`, mockNilHandler, http.MethodGet)
+	serv.Route(`/aaa/bbb/000/eee/ggg/fff/kkk`, mockNilHandler, http.MethodGet)
 
-	b.ResetTimer()
+	req := []*http.Request{
+		httptest.NewRequest("GET", "/aaa/bbb/ccc/eee/ggg/fff/kkk", nil),
+		httptest.NewRequest("GET", "/aaa/bbb/000/eee/ggg/fff/kkk", nil),
+	}
+
 	b.ReportAllocs()
+	b.ResetTimer()
 
-	b.Run("", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
 			w := httptest.NewRecorder()
-			serv.ServeHTTP(w, r)
-			if w.Result().StatusCode != http.StatusOK {
-				b.Fatalf("invalid code: %d", w.Result().StatusCode)
-			}
-			w.Flush()
+			b.Run("", func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					serv.ServeHTTP(w, req[i%2])
+					if w.Result().StatusCode != http.StatusOK {
+						b.Fatalf("invalid code: %d", w.Result().StatusCode)
+					}
+					w.Flush()
+				}
+			})
+		}
+	})
+}
+
+func BenchmarkRouter1(b *testing.B) {
+	serv := routes.NewRouter()
+	serv.Route(`/{id0}/{id1}/{id2:\d+}/{id3}/{id4}/{id5}/{id6}`, mockNilHandler, http.MethodGet)
+	serv.Route(`/{id0}/{id1}/{id2:\w+}/{id3}/{id4}/{id5}/{id6}`, mockNilHandler, http.MethodGet)
+
+	req := []*http.Request{
+		httptest.NewRequest("GET", "/aaa/bbb/ccc/eee/ggg/fff/kkk", nil),
+		httptest.NewRequest("GET", "/aaa/bbb/000/eee/ggg/fff/kkk", nil),
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			w := httptest.NewRecorder()
+			b.Run("", func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					serv.ServeHTTP(w, req[i%2])
+					if w.Result().StatusCode != http.StatusOK {
+						b.Fatalf("invalid code: %d", w.Result().StatusCode)
+					}
+					w.Flush()
+				}
+			})
 		}
 	})
 }

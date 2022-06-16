@@ -71,20 +71,14 @@ func (v *matcher) Match(vv string, vars internal.VarsData) (string, bool) {
 	}
 
 	link := ""
-	for _, name := range v.rex.SubexpNames() {
-		indx := v.rex.SubexpIndex(name)
-		if indx == -1 {
-			continue
-		}
+	for indx, name := range v.rex.SubexpNames() {
 		val := matches[indx]
 		if len(val) == 0 {
 			continue
 		}
-
 		if l, ok := v.links[name]; ok {
 			link = l
 		}
-
 		if key, ok := v.keys[name]; ok {
 			vars[key] = val
 		}
