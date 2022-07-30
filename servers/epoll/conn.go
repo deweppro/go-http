@@ -3,14 +3,12 @@ package epoll
 import (
 	"bytes"
 	"io"
+	"sync"
 
 	"github.com/deweppro/go-http/pkg/errs"
-
-	cpool "github.com/deweppro/go-chan-pool"
 )
 
-var pool = cpool.ChanPool{
-	Size: eventCount,
+var pool = sync.Pool{
 	New: func() interface{} {
 		return make([]byte, 0, 1024)
 	},

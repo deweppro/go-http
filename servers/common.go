@@ -9,8 +9,9 @@ const (
 
 type Config struct {
 	Addr            string        `yaml:"addr"`
-	ReadTimeout     time.Duration `yaml:"read_timeout"`
-	WriteTimeout    time.Duration `yaml:"write_timeout"`
-	IdleTimeout     time.Duration `yaml:"idle_timeout"`
-	ShutdownTimeout time.Duration `yaml:"shutdown_timeout"`
+	Network         string        `yaml:"network,omitempty"`
+	ReadTimeout     time.Duration `yaml:"read_timeout,omitempty"`
+	WriteTimeout    time.Duration `yaml:"write_timeout,omitempty"`
+	IdleTimeout     time.Duration `yaml:"idle_timeout,omitempty"`
+	ShutdownTimeout time.Duration `yaml:"shutdown_timeout,omitempty"`
 }

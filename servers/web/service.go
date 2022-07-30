@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -18,7 +19,16 @@ import (
 const (
 	defaultTimeout         = 10 * time.Second
 	defaultShutdownTimeout = 1 * time.Second
+	defaultNetwork         = "tcp"
 )
+
+var networkType = map[string]struct{}{
+	"tcp":        {},
+	"tcp4":       {},
+	"tcp6":       {},
+	"unixpacket": {},
+	"unix":       {},
+}
 
 type Server struct {
 	status  int64
@@ -54,6 +64,12 @@ func (s *Server) validate() {
 	if s.conf.ShutdownTimeout == 0 {
 		s.conf.ShutdownTimeout = defaultShutdownTimeout
 	}
+	if len(s.conf.Network) == 0 {
+		s.conf.Network = defaultNetwork
+	}
+	if _, ok := networkType[s.conf.Network]; !ok {
+		s.conf.Network = defaultNetwork
+	}
 	s.conf.Addr = internal.ValidateAddress(s.conf.Addr)
 }
 
@@ -63,28 +79,33 @@ func (s *Server) Up() error {
 		return errors.WrapMessage(errs.ErrServAlreadyRunning, "starting server on %s", s.conf.Addr)
 	}
 	s.serv = &http.Server{
-		Addr:         s.conf.Addr,
 		ReadTimeout:  s.conf.ReadTimeout,
 		WriteTimeout: s.conf.WriteTimeout,
 		IdleTimeout:  s.conf.IdleTimeout,
 		Handler:      s.handler,
 	}
 
+	nl, err := net.Listen(s.conf.Network, s.conf.Addr)
+	if err != nil {
+		return err
+	}
+
 	s.wg.Add(1)
-	s.log.WithFields(logger.Fields{"ip": s.conf.Addr}).Infof("http server started")
+	s.log.WithFields(logger.Fields{
+		"ip": s.conf.Addr,
+	}).Infof("http server started")
 
 	go func() {
-		err := s.serv.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
+		defer s.wg.Done()
+		if err = s.serv.Serve(nl); err != nil && err != http.ErrServerClosed {
 			s.log.WithFields(logger.Fields{
 				"err": err.Error(), "ip": s.conf.Addr,
 			}).Errorf("http server stopped")
-		} else {
-			s.log.WithFields(logger.Fields{
-				"ip": s.conf.Addr,
-			}).Infof("http server stopped")
+			return
 		}
-		s.wg.Done()
+		s.log.WithFields(logger.Fields{
+			"ip": s.conf.Addr,
+		}).Infof("http server stopped")
 	}()
 	return nil
 }
