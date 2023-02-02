@@ -1,9 +1,6 @@
 # go-http
 
-[![Coverage Status](https://coveralls.io/repos/github/deweppro/go-http/badge.svg?branch=master)](https://coveralls.io/github/deweppro/go-http?branch=master)
-[![Release](https://img.shields.io/github/release/deweppro/go-http.svg?style=flat-square)](https://github.com/deweppro/go-http/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/deweppro/go-http)](https://goreportcard.com/report/github.com/deweppro/go-http)
-[![CI](https://github.com/deweppro/go-http/actions/workflows/ci.yml/badge.svg)](https://github.com/deweppro/go-http/actions/workflows/ci.yml)
+## Deprecated. Use https://github.com/deweppro/go-sdk
 
 ## Install
 
